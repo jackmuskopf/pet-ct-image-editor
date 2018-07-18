@@ -1,0 +1,19 @@
+# ignore all .pyc
+*.pyc
+
+# ignore all __pycache__
+__pycache__/
+
+# ignore all data
+data/
+testing/
+output/
+build/
+dist/
+*.spec
+
+# ignore all ipynb_checkpoints
+.ipynb_checkpoints/
+
+templog.txt
+stack_report.txt
