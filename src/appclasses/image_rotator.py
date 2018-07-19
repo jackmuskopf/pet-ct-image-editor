@@ -1,4 +1,5 @@
 from .dependencies import *
+from .smallscreens import YesNoPopup
 
 class ImageRotator(tk.Frame):
 
@@ -9,101 +10,94 @@ class ImageRotator(tk.Frame):
         self.img_info = None
         
         # title
-        label = tk.Label(self, text="Image Rotator", font=controller.title_font)
-        label.pack(side="top", fill="x", pady=10)
+        title = tk.Label(self, text="Image Rotator", font=controller.title_font, justify='center')
         
-        # reminder to specify nmice
-        self.nmice_msg = None
+        
 
-        # rotator instructions
-        tk.Label(self, 
-            text="\n".join([
-                'Notes on rotation:',
-                'x-axis: belly should be up, head to right',
-                'y-axis: head should be up, heart on right']), 
-            font=tkfont.Font(family='Helvetica', size=9),
-            justify=tk.LEFT
-            ).place(x=20,y=320)
+        # controls frame
+        controls_frame = tk.Frame(self)
 
-        # next, back
-        nbbx,nbby = 135,400
-        tk.Button(self, text="Back",command=self.back).place(x=nbbx,y=nbby)
-        tk.Button(self,text="Next",command=self.next_page).place(x=nbbx+180,y=nbby)
-       
+        # add next and back buttons
+        nbframe = tk.Frame(controls_frame)
+        nxt = tk.Button(nbframe,text='Next',command=self.next_page)
+        back = tk.Button(nbframe,text='Back',command=self.back)
+        nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
+        back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
+        nbframe.grid(row=4,column=0,columnspan=4,pady=(40,0))
+        # self.controller.next_back(controls_frame,n_action=self.next_page,b_action=self.back)
+
+        # img info
+        img_info = controller.get_img_info(controls_frame)
+        img_info.grid(row=0,column=0,pady=(0,50))
+
         # exposure scale
-        self.escale_label = None
-        self.escale_apply = None
-        self.escaler = None
-        self.controller.init_escaler(self)
+        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
+        ec,er = 3,1
+        epx = (50,50)
+        self.escale_label.grid(column=ec,row=er,padx=epx)
+        self.escaler.grid(column=ec,row=er+1,padx=epx)
+        self.escale_apply.grid(column=ec,row=er+2,padx=epx)
 
- 
-        rotbx,rotby = 200,220
-        tk.Button(self, text="Rotate on x axis", command=lambda : self.rotate_on_axis('x')).place(x=rotbx,y=rotby)
-        tk.Button(self, text="Rotate on y axis", command=lambda : self.rotate_on_axis('y')).place(x=rotbx,y=rotby+30)
-        tk.Button(self, text="Rotate on z axis", command=lambda : self.rotate_on_axis('z')).place(x=rotbx,y=rotby+60)
+        # rotation buttons
+        rbr,rbc = 1,2 # rotbx,rotby = 200,220
+        tk.Button(controls_frame, text="Rotate on x axis", command=lambda : self.rotate_on_axis('x')).grid(row=rbr,column=rbc)#.pack(anchor=tk.W, side=tk.RIGHT)#.place(x=rotbx,y=rotby)
+        tk.Button(controls_frame, text="Rotate on y axis", command=lambda : self.rotate_on_axis('y')).grid(row=rbr+1,column=rbc)#.pack(anchor=tk.W, side=tk.RIGHT)#.place(x=rotbx,y=rotby+30)
+        tk.Button(controls_frame, text="Rotate on z axis", command=lambda : self.rotate_on_axis('z')).grid(row=rbr+2,column=rbc)#.pack(anchor=tk.W, side=tk.RIGHT)#.place(x=rotbx,y=rotby+60)
         
-        # init some stuff
-        self.controller.init_img_info(self)
-        self.controller.init_escaler(self)
-        self.escaler.place(self.controller.escaler_x)
-        self.img_info.place()
+        # make figure
+        self.make_figure()
 
+        # grid to master frame
+        title.pack(side="top", fill="x", pady=10,expand=False)
+        controls_frame.pack(side="right",fill='y',expand=False,pady=100)#.grid(row=1,column=2,padx=100)
+        self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
+
+        
+
+    def make_figure(self):
         # make figure in tkinter
-        fx,fy = 600,100
-        self.figure = Figure(figsize=(5,5), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.figure, self)
+        self.figframe = tk.Frame(self)
+        self.figure = Figure()
+        self.canvas = FigureCanvasTkAgg(self.figure, self.figframe)
 
         self.controller.view_each_axis(figure=self.figure)
 
-        self.controller.connect_controls(canvas=self.canvas)
         self.canvas.show()
         self.canvas_widget = self.canvas.get_tk_widget()
-        self.canvas_widget.place(x=fx,y=fy)
+        
+        self.canvas_widget.pack(side="top",fill='both',expand=True) # self.canvas_widget.place(x=fx,y=fy)  # self.canvas_widget.pack(anchor=tk.W, side="left",padx=10) #
 
-        toolbar = NavigationToolbar2TkAgg(self.canvas, self)
+        tbframe = tk.Frame(self.figframe)
+        toolbar = NavigationToolbar2TkAgg(self.canvas, tbframe)
         toolbar.update()
-        self.canvas._tkcanvas.place(x=fx,y=fy)
+        self.canvas._tkcanvas.pack()  # toolbar # self.canvas._tkcanvas.place(x=fx,y=fy)
+        tbframe.pack(side="top",expand=False)
+
 
 
     def back(self):
         self.controller.show_frame('ImageSelector')
 
-    def animate_axes(self):
-        self.controller.animate_axes()
 
     def rotate_on_axis(self,ax):
         self.controller.image.rotate_on_axis(ax)
-        self.animate_axes()
+        self.controller.show_frame(self.__name__)
 
     def next_page(self):
-        if self.controller.nmice is not None:
-            if self.controller.nmice == 1:
-                self.controller.view_ax = 'x'
-                im = self.controller.image
-                fpcs = im.filename.split('.')
-                if not fpcs[0].endswith('_s1'):
-                    fpcs[0]+='_s1'
-                self.controller.image.filename = '.'.join(fpcs)
-                self.controller.image.cuts = [self.controller.image] #[SubImage(parent_image=im,img_data=im.img_data,filename='.'.join(fpcs))]
-                self.controller.show_frame('CutViewer')
-            else:
-                self.controller.show_frame('ImageCutter')
-        else:
-            self.nmice_warn()
-            print('Specify number of mice before continuing.')
+        self.controller.show_frame('ImageCutter')
 
-    def set_nmice(self):
-        nmice = self.tknmice.get()
-        if nmice is not None:
-            self.controller.nmice = self.tknmice.get()
+        # ynpopup = self.controller.make_splash(SplashObj=YesNoPopup,text="Do you want to cut this image?")
+        # cutimg = ynpopup.get_ans()
+        # self.controller.stop_splash(ynpopup)
+        # if not cutimg:
+        #     self.controller.view_ax = 'x'
+        #     im = self.controller.image
+        #     fpcs = im.filename.split('.')
+        #     if not fpcs[0].endswith('_s1'):
+        #         fpcs[0]+='_s1'
+        #     self.controller.image.filename = '.'.join(fpcs)
+        #     self.controller.image.cuts = [self.controller.image] #[SubImage(parent_image=im,img_data=im.img_data,filename='.'.join(fpcs))]
+        #     self.controller.show_frame('CutViewer')
+        # else:
+            
 
-
-    def nmice_warn(self):
-        if self.nmice_msg:
-            self.nmice_msg.destroy()
-        color = np.random.choice(["blue","red","green","purple","orange","maroon","cyan","indigo","yellow","violet","pink","turquoise"])
-        self.nmice_msg = tk.Label(self, 
-            text="Number of mice must be indicated before continuing.", 
-            font=tkfont.Font(family='Helvetica', size=12, weight="bold"),
-            fg=color)
-        self.nmice_msg.pack(side="top",fill="x",pady=15)

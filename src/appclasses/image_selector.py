@@ -5,9 +5,11 @@ class ImageSelector(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
+        self.current_cut,self.queued_cuts = [], []
 
         self.__name__ = 'ImageSelector'
         self.controller = controller
+        self.controller.make_size(small=True)
         self.controller.remove_temp_dirs()
         label = tk.Label(self, text="Select Image", font=controller.title_font)
         label.grid(row=0,column=1,columnspan=2,padx=(30,0),pady=(0,20))
@@ -53,7 +55,7 @@ class ImageSelector(tk.Frame):
 
     def browse_file(self):
 
-        p = os.path.join('C:\\Users\\jmusko01\\Desktop\\For Jack\\F220\\4bed\\dynamic\\flipped','mpet3691b_em1_v1.img')
+        p = os.path.join('C:\\Users\\jmusko01\\Documents\\mycode\\preproc_work\\data\\pet','mpet3745a_em1_v1.pet.img')
         i = PETImage(p)
         self.controller.start_img(i)
 

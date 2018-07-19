@@ -7,67 +7,102 @@ class ImageCutter(tk.Frame):
         self.__name__ = 'ImageCutter'
         self.controller = controller
         self.img_info = None
-
+        
         # title
-        label = tk.Label(self, text="Image Cutter", font=controller.title_font)
-        label.pack(side="top", fill="x", pady=10)
+        title = tk.Label(self, text="Image Cutter", font=controller.title_font, justify='center')
 
-        # recenter crosshairs
-        rbx,rby = 200,340
-        tk.Button(self,text="Recenter",command=self.recenter).place(x=rbx,y=rby)
 
-        # choose cutter
-        tk.Label(self,text='Choose cutter:').place(x=20,y=220)
-        cbx,cby = 20,240
-        tk.Button(self,text="Cross",command=lambda:self.set_cutter('cross')).place(x=cbx,y=cby)
-        tk.Button(self,text="Up T",command=lambda:self.set_cutter('up_T')).place(x=cbx,y=cby+30)
-        tk.Button(self,text="Down T",command=lambda:self.set_cutter('down_T')).place(x=cbx,y=cby+60)
-        tk.Button(self,text="Horizontal",command=lambda:self.set_cutter('horizontal')).place(x=cbx,y=cby+90)
-        tk.Button(self,text="Vertical",command=lambda:self.set_cutter('vertical')).place(x=cbx,y=cby+120)
+        # controls frame
+        controls_frame = tk.Frame(self)
+
+        # add next and back buttons
+        nbframe = tk.Frame(controls_frame)
+        nxt = tk.Button(nbframe,text='Make cuts',command=self.make_cuts)
+        back = tk.Button(nbframe,text='Back',command=self.back)
+        nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
+        back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
+        nbframe.grid(row=4,column=0,columnspan=4,pady=(40,0))
+       
+        # add cut to queued cuts
+        cut_controls = tk.Frame(controls_frame)
+        add_cut = tk.Button(cut_controls,text='Add cut',command=self.add_cut)
+        add_cut.pack(side=tk.RIGHT,padx=(30,0))
+        undo_click = tk.Button(cut_controls,text='Undo click',command=self.undo_click)
+        undo_click.pack(side=tk.LEFT)
+        cut_controls.grid(row=3,column=2)
+
+        # rm cut frame
+        ncuts = len(self.controller.queued_cuts)
+        rm_button_frame = None
+        if ncuts:
+            rm_button_frame = tk.Frame(controls_frame)
+            for ix in range(ncuts):
+                rmbutton = tk.Button(rm_button_frame,text='Remove cut {}'.format(ix+1),command=lambda ix=ix:self.remove_cut(ix))
+                rmbutton.pack(side="top")
+            rm_button_frame.grid(row=1,column=4,rowspan=ncuts,padx=(30,30))
+
+        # img info
+        img_info = controller.get_img_info(controls_frame)
+        img_info.grid(row=0,column=0,pady=(0,50))
 
         # exposure scale
-        self.escale_label = None
-        self.escale_apply = None
-        self.escaler = None
-        self.controller.init_escaler(self)
+        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
+        ec,er = 3,0
+        epx = (50,50)
+        self.escale_label.grid(column=ec,row=er,padx=epx)
+        self.escaler.grid(column=ec,row=er+1,padx=epx)
+        self.escale_apply.grid(column=ec,row=er+2,padx=epx)
 
-        # back, next
-        nbbx,nbby = 135,400
-        tk.Button(self, text="Back",command=self.back).place(x=nbbx,y=nbby)
-        tk.Button(self,text="Cut Image",command=self.do_cut).place(x=nbbx+180,y=nbby)
+        # make figure
+        self.make_figure()
+
+        # grid to master frame
+        title.pack(side="top", fill="x", pady=10,expand=False)
+        controls_frame.pack(side="right",fill='y',expand=False,pady=100)#.grid(row=1,column=2,padx=100)
+        self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
+
         
 
-        self.controller.init_img_info(self)
-        self.controller.view_ax = 'z'
-        self.controller.init_escaler(self)
-        traceback.print_stack()
-        print("stack size: {}".format(len(traceback.extract_stack())))
-        gc.collect()
-        self.init_ani()
+    def make_figure(self):
+        # make figure in tkinter
+        self.figframe = tk.Frame(self)
+        self.figure = Figure()
+        self.canvas = FigureCanvasTkAgg(self.figure, self.figframe)
+
+        self.controller.static_cutter(figure=self.figure)
+
+        self.controller.static_cutter_controls(canvas=self.canvas)
+        self.canvas.show()
+        self.canvas_widget = self.canvas.get_tk_widget()
+        
+        self.canvas_widget.pack(side="top",fill='both',expand=True) # self.canvas_widget.place(x=fx,y=fy)  # self.canvas_widget.pack(anchor=tk.W, side="left",padx=10) #
+
+        tbframe = tk.Frame(self.figframe)
+        toolbar = NavigationToolbar2TkAgg(self.canvas, tbframe)
+        toolbar.update()
+        self.canvas._tkcanvas.pack()  # toolbar # self.canvas._tkcanvas.place(x=fx,y=fy)
+        tbframe.pack(side="top",expand=False)
 
 
-    def recenter(self):
-        self.controller.cx, self.controller.cy = self.controller.cx_def, self.controller.cy_def
+    def reset(self):
         self.controller.show_frame(self.__name__)
-
 
     def back(self):
         self.controller.show_frame('ImageRotator')
 
-    def init_ani(self):
-        self.start_cutter()
+    def add_cut(self):
+        self.controller.add_cut()
+        self.reset()
 
-    def start_cutter(self):
-        self.controller.animated_cutter(view_ax=self.controller.view_ax)
+    def remove_cut(self,ix):
+        self.controller.remove_cut(ix)
+        self.reset()
 
-    def change_ax(self,ax):
-        self.controller.view_ax = ax
-        self.start_cutter()
+    def undo_click(self):
+        if self.controller.current_cut:
+            self.controller.current_cut.pop(-1)
+            self.reset()
 
-    def set_cutter(self,cutter):
-        self.controller.cutter=cutter
-        self.show_frame(self.__name__)
-
-    def do_cut(self):
-        self.controller.cut_image()
-        self.controller.show_frame('CutViewer')
+    def make_cuts(self):
+        self.cut_img()
+        self.controller.show_frame('')

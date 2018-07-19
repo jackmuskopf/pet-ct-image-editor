@@ -3,6 +3,8 @@ from .dependencies import *
 class CutViewer(tk.Frame):
 
     def __init__(self, parent, controller):
+
+        raise Exception('Deprecated!')
         
         tk.Frame.__init__(self, parent)
         self.__name__ = 'CutViewer'

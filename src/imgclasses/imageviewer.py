@@ -8,7 +8,7 @@ from .baseimage import PETImage, SubImage
 
 class ImageEditor:
 
-	def __init__(self, image=None, nmice=None, collapse='sum', escale=1.0):
+	def __init__(self, image=None, collapse='sum', escale=1.0):
 		self.image = image    # data_handler.MyImage superclass
 
 		# toggle for animation
@@ -20,9 +20,16 @@ class ImageEditor:
 		# method of collapsing axes for 2d viewing of 3d data
 		self.collapse = collapse
 
+		# cut in process of being specified
+		self.current_cut = []
 
-		# for displaying cut
-		self.nmice = nmice
+		# cut coords to be used and displayed on ImageCutter
+		self.queued_cuts = []
+
+
+
+
+		# for displaying cut (deprecated)
 		self.cutter = 'cross'
 		self.line_map = {'cross' : 2,
 						'up_T' : 2,
@@ -36,6 +43,25 @@ class ImageEditor:
 						'horizontal' : 2,
 						'vertical' : 2,
 						'no_cut' : 1}
+
+
+
+
+
+
+	def add_cut(self):
+		length = len(self.current_cut)
+		if  length != 4:
+			print('self.current_cut is not the right length: {}'.format(length))
+		else:
+			self.queued_cuts.append(self.current_cut)
+			self.current_cut = []
+
+
+	def remove_cut(self,ix):
+		if self.queued_cuts:
+			self.queued_cuts.pop(ix)
+
 
 
 	def init_cutter_coords(self):
@@ -54,8 +80,38 @@ class ImageEditor:
 	def swap_x(self,frames):	
 		return [f.swapaxes(0,1) for f in frames]
 
+	def view_axis(self, figure, axis, frame_range=None):
 
-	def view_each_axis(self, figure=None, frame_range=None):
+		if frame_range is None:
+			# collapse over frames using sum or max
+			frame = self.image.collapse_over_frames(method=self.collapse)
+		else:
+			fs = range(frame_range[0],frame_range[1]+1)
+			frames = np.stack([self.image.get_frame(k) for k in fs],axis=-1)
+			frame = self.image.collapse_over_frames(method=self.collapse,matrix=frames)
+		
+		if axis not in ['x','y','z',0,1,2]:
+			raise ValueError('Bad axis {}'.format(axis))
+
+		axis = self.image.get_axis(axis)
+
+		mat = getattr(frame,self.collapse)(axis=axis)
+		mat = normalize(mat)*(self.escale)
+		if axis in ['x',self.image.get_axis('x')]:
+			mat = mat.swapaxes(0,1)
+
+
+		ax = figure.add_subplot(111)
+		ax.set_title('{} axis'.format(self.image.inv_ax_map[axis]))
+		ax.imshow(mat,cmap="gray",clim=(0,1))
+		ax.set_xlim(0,mat.shape[1])
+		ax.set_ylim(0,mat.shape[0])
+		figure.tight_layout()
+
+		return
+
+
+	def view_each_axis(self, figure, frame_range=None):
 		if figure is None:
 			raise ValueError('Need to include figure in argument')
 		if frame_range is None:
@@ -74,7 +130,6 @@ class ImageEditor:
 		ymat = normalize(ymat)*(self.escale)
 		zmat = normalize(zmat)*(self.escale)
 
-		# plot with control
 		ax_title = {0:'x axis', 1:'y axis', 2:'z axis'}
 		ax1 = figure.add_subplot(221)
 		ax2 = figure.add_subplot(222)
@@ -92,10 +147,69 @@ class ImageEditor:
 
 		return
 
+	def static_cutter(self, figure, frame_range=None):
 
-	def check_nmice(self):
-		if self.nmice not in range(1,5):
-			raise ValueError('ImageEditor.nmice not properly initialized.')
+		def add_lines(ax):
+			for cut in self.queued_cuts:
+				xs = [p[0] for p in cut]
+				ys = [p[1] for p in cut]
+				xmax,xmin = max(xs),min(xs)
+				ymax,ymin = max(ys),min(ys)
+				ax.plot((xmin,xmax),(ymax,ymax),'r-')
+				ax.plot((xmin,xmin),(ymin,ymax),'r-')
+				ax.plot((xmin,xmax),(ymin,ymin),'r-')
+				ax.plot((xmax,xmax),(ymin,ymax),'r-')
+
+			for x,y in self.current_cut:
+				d = self.cxlen
+				ax.plot((x,x),(y-d,y+d),'r-')
+				ax.plot((x-d,x+d),(y,y),'r-')
+
+
+		axis = 'z'
+
+		if frame_range is None:
+			# collapse over frames using sum or max
+			frame = self.image.collapse_over_frames(method=self.collapse)
+		else:
+			fs = range(frame_range[0],frame_range[1]+1)
+			frames = np.stack([self.image.get_frame(k) for k in fs],axis=-1)
+			frame = self.image.collapse_over_frames(method=self.collapse,matrix=frames)
+		
+		axis = self.image.get_axis(axis)
+
+		mat = getattr(frame,self.collapse)(axis=axis)
+		mat = normalize(mat)*(self.escale)
+		if axis in ['x',self.image.get_axis('x')]:
+			mat = mat.swapaxes(0,1)
+
+
+		ax = figure.add_subplot(111)
+		ax.set_title('{} axis'.format(self.image.inv_ax_map[axis]))
+		ax.imshow(mat,cmap="gray",clim=(0,1))
+		
+		add_lines(ax)
+
+		ax.set_xlim()
+		ax.set_ylim()
+		figure.tight_layout()
+
+		return
+
+
+
+	def cut_image(self):
+		self.image.cuts = []
+		for ix,cut in enumerate(self.queued_cuts):
+			xs = [p[0] for p in cut]
+			ys = [p[1] for p in cut]
+			xmax,xmin = max(xs),min(xs)
+			ymax,ymin = max(ys),min(ys)
+			fname, data = self.image.submemmap(ix=ix, data=self.image.img_data[:,ymin:ymax,xmin:xmax,:])
+			new_img = SubImage(parent_image=self.image, img_data=data, filename=fname, cut_coords=[(xmin,xmax),
+																								  (ymin,ymax)])
+			self.image.cuts.append(new_img)
+
 
 
 
@@ -195,7 +309,9 @@ class ImageEditor:
 
 
 
-	def cut_image(self):
+	def cut_image_old(self):
+
+		raise Exception('Method has been deprecated.')
 
 		self.image.clean_cuts()
 		cx,cy = self.cx,self.cy
@@ -310,7 +426,6 @@ class ImageEditor:
 				im.set_array(cuts[j][k])
 			return all_imgs
 
-		self.check_nmice()
 
 		if not self.image.cuts:
 			raise ValueError('Image has not been cut in ImageEditor.animate_cuts.')

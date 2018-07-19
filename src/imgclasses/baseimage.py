@@ -23,6 +23,7 @@ class BaseImage:
         self.filepath = filepath
         self.img_data = img_data
         self.ax_map = {'z':0,'y':1,'x':2}
+        self.inv_ax_map = {v:k for k,v in self.ax_map.items()}
         self.struct_flags = {
                                 1:'B',
                                 2:'h',
@@ -499,7 +500,7 @@ class BaseImage:
 
 class SubImage(BaseImage):
 
-    def __init__(self, parent_image, img_data, filename):
+    def __init__(self, parent_image, img_data, filename, cut_coords):
 
         # make tempfile
         self.filename = filename
@@ -510,6 +511,7 @@ class SubImage(BaseImage):
         self.frame_range = parent_image.frame_range
         self.plane_range = parent_image.plane_range
         self.scaled = parent_image.scaled
+        self.cut_coords = cut_coords
         shape = self.img_data.shape
         self.zdim, self.ydim, self.xdim, self.nframes = shape
         self.x_dimension,self.y_dimension,self.z_dimension = self.xdim,self.ydim,self.zdim

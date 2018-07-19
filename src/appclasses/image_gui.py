@@ -1,6 +1,5 @@
 from .dependencies import *
 from .confirm_save import ConfirmSave
-from .cut_viewer import CutViewer
 from .header_ui import HeaderUI
 from .image_cutter import ImageCutter
 from .image_rotator import ImageRotator
@@ -15,20 +14,8 @@ class ImageGUI(tk.Tk,ImageEditor):
         tk.Tk.__init__(self)
         self.__name__ = 'ImageGUI'
         self.title("Image Preprocessing")
-        w = 1200 # width for the Tk root
-        h = 550 # height for the Tk root
 
-        # get screen width and height
-        ws = self.winfo_screenwidth() # width of the screen
-        hs = self.winfo_screenheight() # height of the screen
-
-        # calculate x and y coordinates for the Tk root window
-        x = (ws/2) - (w/2)
-        y = (hs/2) - (h/2)
-
-        # set the dimensions of the screen 
-        # and where it is placed
-        self.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        self.make_size()
 
         self.img_type = None
         self.filepath = None
@@ -48,6 +35,10 @@ class ImageGUI(tk.Tk,ImageEditor):
         
         # image info coords
         self.iicoords = (620,140)
+
+        # next and back button coords
+        self.bbx, self.bby = 735, 400
+        self.nbx, self.nby = self.bbx+180, self.bby
 
         # attribute to hold splash screen
         self.splash = None
@@ -70,11 +61,31 @@ class ImageGUI(tk.Tk,ImageEditor):
         self.container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (ImageSelector, ImageRotator, ImageCutter, CutViewer, HeaderUI, ConfirmSave):
+        for F in (ImageSelector, ImageRotator, ImageCutter, HeaderUI, ConfirmSave):
             page_name = F.__name__
             self.frames[page_name] = F
 
         self.show_frame("ImageSelector")
+
+    def make_size(self,small=False):
+        if small:
+            w = 500
+            h = 500
+        else:
+            w = 1200 # width for the Tk root
+            h = 650 # height for the Tk root
+
+        # get screen width and height
+        ws = self.winfo_screenwidth() # width of the screen
+        hs = self.winfo_screenheight() # height of the screen
+
+        # calculate x and y coordinates for the Tk root window
+        x = (ws/2) - (w/2)
+        y = (hs/2) - (h/2)
+
+        # set the dimensions of the screen 
+        # and where it is placed
+        self.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
 
     def get_files(self):
@@ -121,10 +132,14 @@ class ImageGUI(tk.Tk,ImageEditor):
         log_temp_dir(tdir)
         self.image.tempdir = tdir
         self.image.load_image()
-        self.init_cutter_coords()
+        
+        # calc crossx len for static cutter
+        maxdim = max(self.image.params.x_dimension,self.image.params.y_dimension)
+        self.cxlen = math.ceil(maxdim/100)
 
 
     def start_img(self,img):
+        self.make_size()
         loadscreen = self.make_splash(SplashObj=SplashScreen,text='Loading...')       
         self.image = img
         self.load_image()
@@ -133,32 +148,15 @@ class ImageGUI(tk.Tk,ImageEditor):
         self.show_frame("ImageRotator")
 
 
-    def connect_controls(self,canvas):
-
-        def onClick(event):
-            if event.xdata is not None and event.ydata is not None:
-                self.cx,self.cy = (int(round(event.xdata)),int(round(event.ydata)))
-                message = 'Cutter coords: (x={0},y={1})'.format(self.cx,self.cy)
-                print(message)
-
-        canvas.mpl_connect('button_press_event', onClick)
-
 
     def init_escaler(self, frame):
-        self.adjust_escale(frame)
-        try:
-            frame.escaler.destroy()
-        except:
-            pass
-        frame.escaler = self.make_escale(frame)
-        
 
-        if frame.escale_label is None:
-            frame.escale_label = tk.Label(frame, text="Exposure Scale:",justify=tk.LEFT)
-        if frame.escale_apply is None:
-            frame.escale_apply = tk.Button(frame, text="Apply",command=lambda:self.show_frame(frame.__name__))
-            
-        self.place_escale(frame)
+        escaler = self.make_escale(frame)
+        escale_label = tk.Label(frame, text="Exposure Scale:",justify=tk.LEFT)
+        escale_apply = tk.Button(frame, text="Apply",command=self.adjust_escale)
+        
+        return (escaler,escale_label,escale_apply)
+        # self.place_escale(frame)
 
     def make_escale(self, frame):
         self.str_scale.set(str(self.escale))
@@ -166,13 +164,14 @@ class ImageGUI(tk.Tk,ImageEditor):
         return escaler
 
 
-    def adjust_escale(self,frame):
-        if frame.escaler is not None:
-            try:
-                self.escale = float(self.str_scale.get())
-            except ValueError:
-                print('Cannot interpret input {} exposure scale as a float.'.format(frame.str_scale.get()))
-                return
+    def adjust_escale(self):
+        try:
+            self.escale = float(self.str_scale.get())
+        except ValueError:
+            print('Cannot interpret input {} exposure scale as a float.'.format(self.str_scale.get()))
+            return
+        self.show_frame(self.raised_frame.__name__)
+
 
     def place_escale(self,frame):
         frame.escale_label.place(x=self.escaler_x,y=self.escaler_y-30)
@@ -184,12 +183,10 @@ class ImageGUI(tk.Tk,ImageEditor):
 
     def get_img_info(self,frame):
         fname = self.image.filename
-        nmice = self.nmice if self.nmice is not None else '?'
         z,y,x,frames = self.image.img_data.shape
         text = '\n'.join(['File : {}'.format(fname),
                         'Number of frames : {}'.format(frames),
-                        'Frame dimensions : ({0}, {1}, {2})'.format(x,y,z),
-                        'Number of mice : {}'.format(nmice)
+                        'Frame dimensions : ({0}, {1}, {2})'.format(x,y,z)
             ])
         label = tk.Label(frame,text=text,font=tkfont.Font(family='Helvetica', size=9),justify=tk.LEFT)
         return label
@@ -201,6 +198,29 @@ class ImageGUI(tk.Tk,ImageEditor):
         if coords is None:
             coords = self.iicoords
         frame.img_info.place(x=coords[0],y=coords[1])
+
+
+
+    def static_cutter_controls(self,canvas):
+
+        def onClick(event):
+            if event.xdata is not None and event.ydata is not None:
+                self.cx,self.cy = (int(round(event.xdata)),int(round(event.ydata)))
+                if len(self.current_cut) > 4:
+                    raise ValueError('Error in onClick event; self.current_cut too large.')
+                elif len(self.current_cut) == 4:
+                    self.current_cut.pop(0)
+                self.current_cut.append((self.cx,self.cy))
+
+                message = 'Cutter coords: (x={0},y={1})'.format(self.cx,self.cy)
+                print(message)
+                self.show_frame(self.raised_frame.__name__)
+
+        canvas.mpl_connect('button_press_event', onClick)
+
+
+
+
 
     def remove_temp_dirs(self):
         self.clean_memmaps()
