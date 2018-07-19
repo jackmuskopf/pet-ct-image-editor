@@ -9,7 +9,7 @@ class ImageSelector(tk.Frame):
 
         self.__name__ = 'ImageSelector'
         self.controller = controller
-        self.controller.make_size(small=True)
+        # self.controller.make_size(small=True)
         self.controller.remove_temp_dirs()
         label = tk.Label(self, text="Select Image", font=controller.title_font)
         label.grid(row=0,column=1,columnspan=2,padx=(30,0),pady=(0,20))

@@ -49,6 +49,9 @@ class ImageGUI(tk.Tk,ImageEditor):
         # attribute to hold which frame was raised last
         self.last_frame = None
 
+        # keep track of which cut we are on (HeaderUI)
+        self.cutix = 0
+
         # title font var
         self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", slant="italic")
 
@@ -139,7 +142,7 @@ class ImageGUI(tk.Tk,ImageEditor):
 
 
     def start_img(self,img):
-        self.make_size()
+        # self.make_size()
         loadscreen = self.make_splash(SplashObj=SplashScreen,text='Loading...')       
         self.image = img
         self.load_image()

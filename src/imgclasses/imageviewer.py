@@ -190,8 +190,8 @@ class ImageEditor:
 		
 		add_lines(ax)
 
-		ax.set_xlim()
-		ax.set_ylim()
+		ax.set_xlim(0,mat.shape[1])
+		ax.set_ylim(0,mat.shape[0])
 		figure.tight_layout()
 
 		return
@@ -210,10 +210,80 @@ class ImageEditor:
 																								  (ymin,ymax)])
 			self.image.cuts.append(new_img)
 
+	def center_on_zeros(self, mat, xdim, ydim):
+		if len(mat.shape) != 2:
+			raise ValueError('Wrong shape matrix in center_on_zeros')
+		mx,my = mat.shape
+		if mx > xdim or my > ydim:
+			raise ValueError('Cannot place {}x{} matrix on {}x{} matrix'.format(mx,my,xdim,ydim))
+		fillmat = np.zeros((xdim,ydim))
+
+		# find centers
+		ccx,ccy = (round(mx/2),round(my/2))
+		czx,czy = (round(xdim/2),round(ydim/2))
+
+		# find indices
+		sx = czx - ccx
+		ex = mx + sx
+		sy = czy - ccy
+		ey = my + sy
+
+		fillmat[sx:ex,sy:ey] = mat
+
+		return fillmat
+
+
+
+	def show_cut(self, figure, ix):
+		print('Showing cut {}'.format(ix))
+		cut = self.image.cuts[ix]
+		(xmin,xmax),(ymin,ymax) = cut.cut_coords
+		axis = 'z'
+		axis = self.image.get_axis(axis)
+
+		ax1 = figure.add_subplot(121)
+		ax2 = figure.add_subplot(122)
+
+		# cut image
+		cutframe = cut.collapse_over_frames(method=self.collapse)
+		cutmat = getattr(cutframe,self.collapse)(axis=axis)
+		cutmat = self.center_on_zeros(cutmat,xdim=self.image.params.x_dimension,ydim=self.image.params.y_dimension)
+
+		# original image
+		frame = self.image.collapse_over_frames(method=self.collapse)
+		mat = getattr(frame,self.collapse)(axis=axis)
+
+		# normalize both the same
+		maxval = mat.max()
+		scale = self.escale/float(maxval) if not_zero(maxval) else self.escale
+		mat = mat*scale
+		cutmat = cutmat*scale
+
+		
+		ax1.imshow(mat,cmap="gray",clim=(0,1))
+		ax1.set_xlim(0,mat.shape[1])
+		ax1.set_ylim(0,mat.shape[0])
+
+		# draw red box around cut mouse
+		ax1.plot((xmin,xmax),(ymax,ymax),'r-')
+		ax1.plot((xmin,xmin),(ymin,ymax),'r-')
+		ax1.plot((xmin,xmax),(ymin,ymin),'r-')
+		ax1.plot((xmax,xmax),(ymin,ymax),'r-')
+
+		# plot cut image
+		ax2.imshow(cutmat,cmap="gray",clim=(0,1))
+		ax2.set_xlim(0,cutmat.shape[1])
+		ax2.set_ylim(0,cutmat.shape[0])
+
+		figure.suptitle('View from feet (z-axis)', fontsize=14)
+		figure.tight_layout()
+
 
 
 
 	def animated_cutter(self, view_ax='z', cutter=None, method='collapse', frame_range=None, slice_ix=None):
+
+		raise Exception('Deprecated!')
 
 		def genIx():
 			dt = 1

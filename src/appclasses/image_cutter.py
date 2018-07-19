@@ -104,5 +104,5 @@ class ImageCutter(tk.Frame):
             self.reset()
 
     def make_cuts(self):
-        self.cut_img()
-        self.controller.show_frame('')
+        self.controller.cut_image()
+        self.controller.show_frame('HeaderUI')
