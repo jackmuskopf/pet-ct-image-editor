@@ -1,8 +1,4 @@
 import os, sys
-## ok to delete if pyinstaller works ok
-# if sys.platform == 'darwin':
-#     import matplotlib
-#     matplotlib.use('TkAgg')
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg

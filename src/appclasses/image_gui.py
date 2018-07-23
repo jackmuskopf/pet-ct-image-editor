@@ -212,7 +212,7 @@ class ImageGUI(tk.Tk,ImageEditor):
                 if len(self.current_cut) > 4:
                     raise ValueError('Error in onClick event; self.current_cut too large.')
                 elif len(self.current_cut) == 4:
-                    self.current_cut.pop(0)
+                    self.current_cut.pop(-1)
                 self.current_cut.append((self.cx,self.cy))
 
                 message = 'Cutter coords: (x={0},y={1})'.format(self.cx,self.cy)

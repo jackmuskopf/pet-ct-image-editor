@@ -28,6 +28,17 @@ class ImageEditor:
 		# cut coords to be used and displayed on ImageCutter
 		self.queued_cuts = []
 
+		# color map for distinguishing cuts
+		self.colors = [
+			'red',
+			'green',
+			'blue',
+			'orange',
+			'magenta',
+			'cyan'
+		]
+
+
 
 
 
@@ -47,11 +58,19 @@ class ImageEditor:
 						'no_cut' : 1}
 
 
+	def get_color(self):
+		try:
+			return self.colors.pop(0)
+		except IndexError:
+			return 'red'
+
+
 	def add_cut(self):
 		length = len(self.current_cut)
 		if  length < 2:
 			print('self.current_cut is not the right length: {}'.format(length))
 		else:
+
 			cut = self.current_cut
 			ix = len(self.image.cuts) + 1
 			xs = [p[0] for p in cut]
@@ -60,7 +79,7 @@ class ImageEditor:
 			ymax,ymin = max(ys),min(ys)
 			fname, data = self.image.submemmap(ix=ix, data=self.image.img_data[:,ymin:ymax,xmin:xmax,:])
 			new_img = SubImage(parent_image=self.image, img_data=data, filename=fname, cut_coords=[(xmin,xmax),
-																								  (ymin,ymax)])
+																								(ymin,ymax)], linecolor=self.get_color())
 			self.image.cuts.append(new_img)
 			self.current_cut = []
 
@@ -74,6 +93,8 @@ class ImageEditor:
 			pass
 
 		fn = '{}.dat'.format(self.image.cuts[ix].filename.split('.')[0])
+		color = self.image.cuts[ix].linecolor
+		self.colors = self.colors + [color,] if color not in self.colors else self.colors
 		del self.image.cuts[ix]
 		fp = os.path.join(self.image.tempdir,fn)
 		gc.collect()
@@ -174,10 +195,10 @@ class ImageEditor:
 				ys = coords[1]
 				xmax,xmin = max(xs),min(xs)
 				ymax,ymin = max(ys),min(ys)
-				ax.plot((xmin,xmax),(ymax,ymax),'r-')
-				ax.plot((xmin,xmin),(ymin,ymax),'r-')
-				ax.plot((xmin,xmax),(ymin,ymin),'r-')
-				ax.plot((xmax,xmax),(ymin,ymax),'r-')
+				ax.plot((xmin,xmax),(ymax,ymax),color=cut.linecolor)
+				ax.plot((xmin,xmin),(ymin,ymax),color=cut.linecolor)
+				ax.plot((xmin,xmax),(ymin,ymin),color=cut.linecolor)
+				ax.plot((xmax,xmax),(ymin,ymax),color=cut.linecolor)
 
 			for x,y in self.current_cut:
 				d = self.cxlen
@@ -218,30 +239,6 @@ class ImageEditor:
 
 
 
-	def center_on_zeros(self, mat, xdim, ydim):
-		if len(mat.shape) != 2:
-			raise ValueError('Wrong shape matrix in center_on_zeros')
-		mx,my = mat.shape
-		if mx > xdim or my > ydim:
-			raise ValueError('Cannot place {}x{} matrix on {}x{} matrix'.format(mx,my,xdim,ydim))
-		fillmat = np.zeros((xdim,ydim))
-
-		# find centers
-		ccx,ccy = (round(mx/2),round(my/2))
-		czx,czy = (round(xdim/2),round(ydim/2))
-
-		# find indices
-		sx = czx - ccx
-		ex = mx + sx
-		sy = czy - ccy
-		ey = my + sy
-
-		fillmat[sx:ex,sy:ey] = mat
-
-		return fillmat
-
-
-
 	def show_cut(self, figure, ix):
 		print('Showing cut {}'.format(ix))
 		cut = self.image.cuts[ix]
@@ -255,7 +252,6 @@ class ImageEditor:
 		# cut image
 		cutframe = cut.collapse_over_frames(method=self.collapse)
 		cutmat = getattr(cutframe,self.collapse)(axis=axis)
-		cutmat = self.center_on_zeros(cutmat,xdim=self.image.params.x_dimension,ydim=self.image.params.y_dimension)
 
 		# original image
 		frame = self.image.collapse_over_frames(method=self.collapse)
@@ -272,11 +268,11 @@ class ImageEditor:
 		ax1.set_xlim(0,mat.shape[1])
 		ax1.set_ylim(0,mat.shape[0])
 
-		# draw red box around cut mouse
-		ax1.plot((xmin,xmax),(ymax,ymax),'r-')
-		ax1.plot((xmin,xmin),(ymin,ymax),'r-')
-		ax1.plot((xmin,xmax),(ymin,ymin),'r-')
-		ax1.plot((xmax,xmax),(ymin,ymax),'r-')
+		# draw box around cut mouse
+		ax1.plot((xmin,xmax),(ymax,ymax),color=cut.linecolor)
+		ax1.plot((xmin,xmin),(ymin,ymax),color=cut.linecolor)
+		ax1.plot((xmin,xmax),(ymin,ymin),color=cut.linecolor)
+		ax1.plot((xmax,xmax),(ymin,ymax),color=cut.linecolor)
 
 		# plot cut image
 		ax2.imshow(cutmat,cmap="gray",clim=(0,1))
@@ -294,7 +290,7 @@ class ImageEditor:
 
 		cuts = self.image.cuts
 
-		ncols = int(len(cuts)>2) + 1
+		ncols = 2
 		nrows = math.ceil(len(cuts)/2.0)
 
 		for i,cut in enumerate(cuts):
@@ -316,10 +312,10 @@ class ImageEditor:
 			ax.set_ylim(0,mat.shape[0])
 
 			# draw red box around cut mouse
-			ax.plot((xmin,xmax),(ymax,ymax),'r-')
-			ax.plot((xmin,xmin),(ymin,ymax),'r-')
-			ax.plot((xmin,xmax),(ymin,ymin),'r-')
-			ax.plot((xmax,xmax),(ymin,ymax),'r-')
+			ax.plot((xmin,xmax),(ymax,ymax),color=cut.linecolor)
+			ax.plot((xmin,xmin),(ymin,ymax),color=cut.linecolor)
+			ax.plot((xmin,xmax),(ymin,ymin),color=cut.linecolor)
+			ax.plot((xmax,xmax),(ymin,ymax),color=cut.linecolor)
 
 
 

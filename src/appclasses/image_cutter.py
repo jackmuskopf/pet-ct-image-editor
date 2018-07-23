@@ -9,7 +9,7 @@ class ImageCutter(tk.Frame):
         self.img_info = None
         
         # title
-        title = tk.Label(self, text="Image Cutter", font=controller.title_font, justify='center')
+        title = tk.Label(self, text="Cut Image", font=controller.title_font, justify='center')
 
 
         # controls frame
@@ -36,8 +36,8 @@ class ImageCutter(tk.Frame):
         rm_button_frame = None
         if ncuts:
             rm_button_frame = tk.Frame(controls_frame)
-            for ix in range(ncuts):
-                rmbutton = tk.Button(rm_button_frame,text='Remove cut {}'.format(ix+1),command=lambda ix=ix:self.remove_cut(ix))
+            for ix,cut in enumerate(self.controller.image.cuts):
+                rmbutton = tk.Button(rm_button_frame,text='Remove cut {}'.format(ix+1),command=lambda ix=ix:self.remove_cut(ix),bg=cut.linecolor)
                 rmbutton.pack(side="top")
             rm_button_frame.grid(row=1,column=0,rowspan=ncuts,padx=(30,30))
 
@@ -58,8 +58,8 @@ class ImageCutter(tk.Frame):
 
         # grid to master frame
         title.pack(side="top", fill="x", pady=10,expand=False)
-        controls_frame.pack(side="right",fill='y',expand=False,pady=30)#.grid(row=1,column=2,padx=100)
-        self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
+        controls_frame.pack(side="right",fill='y',expand=False,pady=30)
+        self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)
 
         
 
@@ -75,12 +75,12 @@ class ImageCutter(tk.Frame):
         self.canvas.show()
         self.canvas_widget = self.canvas.get_tk_widget()
         
-        self.canvas_widget.pack(side="top",fill='both',expand=True) # self.canvas_widget.place(x=fx,y=fy)  # self.canvas_widget.pack(anchor=tk.W, side="left",padx=10) #
+        self.canvas_widget.pack(side="top",fill='both',expand=True) 
 
         tbframe = tk.Frame(self.figframe)
         toolbar = NavigationToolbar2TkAgg(self.canvas, tbframe)
         toolbar.update()
-        self.canvas._tkcanvas.pack()  # toolbar # self.canvas._tkcanvas.place(x=fx,y=fy)
+        self.canvas._tkcanvas.pack() 
         tbframe.pack(side="top",expand=False)
 
 
@@ -108,6 +108,4 @@ class ImageCutter(tk.Frame):
             self.controller.show_frame('HeaderUI')
         else:
             print('No cuts made yet')
-        # self.controller.cut_image()
-        # if self.controller.image.cuts:
-        #     self.controller.show_frame('HeaderUI')
+

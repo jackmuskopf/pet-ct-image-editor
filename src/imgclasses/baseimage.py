@@ -46,6 +46,29 @@ class BaseImage:
         self.data_lim = 10**7  # 10 MB
 
 
+    def center_on_zeros(self, mat, xdim, ydim):
+        if len(mat.shape) != 2:
+            raise ValueError('Wrong shape matrix in center_on_zeros')
+        mx,my = mat.shape
+        if mx > xdim or my > ydim:
+            raise ValueError('Cannot place {}x{} matrix on {}x{} matrix'.format(mx,my,xdim,ydim))
+        fillmat = np.zeros((xdim,ydim))
+
+        # find centers
+        ccx,ccy = (round(mx/2),round(my/2))
+        czx,czy = (round(xdim/2),round(ydim/2))
+
+        # find indices
+        sx = czx - ccx
+        ex = mx + sx
+        sy = czy - ccy
+        ey = my + sy
+
+        fillmat[sx:ex,sy:ey] = mat
+
+        return fillmat
+
+
     def submemmap(self, ix, data):
         if self.tempdir is None:
             raise ValueError('self.tempdir is None in self.sub_memmap.')
@@ -60,8 +83,25 @@ class BaseImage:
             found_filename = not os.path.exists(img_temp_name)
             ix+=1
 
-        dfile = np.memmap(img_temp_name, mode='w+', dtype='float32', shape=data.shape)
-        dfile[:] = data[:]
+        dfile = np.memmap(img_temp_name, mode='w+', dtype='float32', shape=self.img_data.shape)
+
+        # center cut on parent image dimensions
+        dz,dy,dx,df = data.shape
+        xdim = self.params.x_dimension
+        ydim = self.params.y_dimension
+
+        # find centers
+        ccx,ccy = (round(dx/2),round(dy/2))
+        czx,czy = (round(xdim/2),round(ydim/2))
+
+        # find indices
+        sx = czx - ccx
+        ex = dx + sx
+        sy = czy - ccy
+        ey = dy + sy
+
+        dfile[:,sy:ey,sx:ex,:] = data[:,:,:,:]
+
         return filename, dfile
 
 
@@ -86,7 +126,7 @@ class BaseImage:
             for line in hdr_lines:
                 kv = params[kw]
                 try:
-                    if kw ==  line.strip().split(' ')[0]: # line.strip()[0:len(kw)]:  #
+                    if kw ==  line.strip().split(' ')[0]:
                         if kw in per_frame:
                             if kv is None:
                                 params[kw] = np.array([])
@@ -107,6 +147,9 @@ class BaseImage:
         if any(failed):
             raise ValueError('Failed to parse parameters: {}'.format(', '.join(failed)))
         hdr_file.close()
+
+        for s in self.strings:
+            params[s] = '' if params[s] is None else params[s]
     
         # Parameters = recordclass('Parameters',' '.join(kwrds))
         self.params = Params(**params)
@@ -302,17 +345,17 @@ class BaseImage:
         def add_animal_number(hdr_lines,animal_number):
             for i,line in enumerate(hdr_lines):
                 if line.strip().startswith('subject_identifier'):
-                    return hdr_lines[:i] + [
+                    return hdr_lines[:i+1] + [
                             '#','# animal_number (string)', '#',
                             'animal_number {}'.format(animal_number.strip())
-                            ] + hdr_lines[i:]
+                            ] + hdr_lines[i+1:]
 
         def change_line(hdr_lines,hdr_var,value):
             '''
             Update line to match value in parameters (user input)
             '''
             for j,line in enumerate(hdr_lines):
-                if line.strip().startswith(hdr_var):
+                if line.strip().startswith(hdr_var+' '):
                     hdr_lines[j] = ' '.join([hdr_var,value])
                     break
             return hdr_lines
@@ -382,7 +425,7 @@ class BaseImage:
             cut_hdr_lines = add_animal_number(cut_hdr_lines,animal_number)
 
 
-        cut_filename = cut_img.filename
+        cut_filename = cut_img.out_filename
         cut_hdr_name = cut_filename+'.hdr'
         cut_hdr_str = '\n'.join(cut_hdr_lines)
 
@@ -407,7 +450,6 @@ class BaseImage:
 
         with open(os.path.join(path,cut_filename),'wb') as dfile:
             write_chunks(out_data,dfile)
-            # dfile.write(struct.pack(nd*sf,*out_data))
         print('File saved.')
 
         # clean up after myself.
@@ -501,7 +543,7 @@ class BaseImage:
 
 class SubImage(BaseImage):
 
-    def __init__(self, parent_image, img_data, filename, cut_coords):
+    def __init__(self, parent_image, img_data, filename, cut_coords, linecolor='red'):
 
         self.filename = filename
 
@@ -522,6 +564,8 @@ class SubImage(BaseImage):
         self.bounds={0 : (self.ydim, self.xdim), 
                     1 : (self.xdim, self.zdim),
                     2 : (self.zdim, self.ydim)}
+
+        self.linecolor = linecolor
 
 
 
