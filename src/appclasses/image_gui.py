@@ -204,7 +204,13 @@ class ImageGUI(tk.Tk,ImageEditor):
 
 
 
-    def static_cutter_controls(self,canvas):
+    def static_cutter_controls(self,canvas,ax):
+        
+        def add_mark(ax):
+            x,y = self.cx,self.cy
+            d = self.cxlen
+            ax.plot((x,x),(y-d,y+d),'r-')
+            ax.plot((x-d,x+d),(y,y),'r-')
 
         def onClick(event):
             if event.xdata is not None and event.ydata is not None:
@@ -217,7 +223,7 @@ class ImageGUI(tk.Tk,ImageEditor):
 
                 message = 'Cutter coords: (x={0},y={1})'.format(self.cx,self.cy)
                 print(message)
-                self.show_frame(self.raised_frame.__name__)
+                add_mark(ax)
 
         canvas.mpl_connect('button_press_event', onClick)
 

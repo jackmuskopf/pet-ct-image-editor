@@ -194,7 +194,7 @@ class ImageEditor:
 		ax.set_ylim(0,mat.shape[0])
 		figure.tight_layout()
 
-		return
+		return ax
 
 
 

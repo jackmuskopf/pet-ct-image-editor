@@ -55,19 +55,20 @@ class ImageSelector(tk.Frame):
 
     def browse_file(self):
 
-        p = os.path.join('C:\\Users\\jmusko01\\Documents\\mycode\\preproc_work\\data\\pet','mpet3745a_em1_v1.pet.img')
-        i = PETImage(p)
-        self.controller.start_img(i)
+        # p = os.path.join('C:\\Users\\jmusko01\\Documents\\mycode\\preproc_work\\data\\pet','mpet3745a_em1_v1.pet.img')
+        # p = os.path.join('C:\\Users\\Jack\\Downloads\\Dynamic\\Dynamic\\PET','mpet3721a_em1_v1.pet.img')
+        # i = PETImage(p)
+        # self.controller.start_img(i)
 
 
-        # Tk().withdraw()
-        # fpath = askopenfilename()
-        # if fpath:
-        #     if fpath.endswith('.hdr'):
-        #         fpath = '.'.join(fpath.split('.')[:-1])
-        #     fname = ntpath.basename(fpath)
-        #     if is_pet(fname):
-        #         img = PETImage(fpath)
-        #     else:
-        #         img = CTImage(fpath)
-        #     self.controller.start_img(img)
+        Tk().withdraw()
+        fpath = askopenfilename()
+        if fpath:
+            if fpath.endswith('.hdr'):
+                fpath = '.'.join(fpath.split('.')[:-1])
+            fname = ntpath.basename(fpath)
+            if is_pet(fname):
+                img = PETImage(fpath)
+            else:
+                img = CTImage(fpath)
+            self.controller.start_img(img)

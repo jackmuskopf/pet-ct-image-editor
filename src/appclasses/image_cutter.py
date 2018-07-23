@@ -69,9 +69,9 @@ class ImageCutter(tk.Frame):
         self.figure = Figure()
         self.canvas = FigureCanvasTkAgg(self.figure, self.figframe)
 
-        self.controller.static_cutter(figure=self.figure)
+        self.ax = self.controller.static_cutter(figure=self.figure)
 
-        self.controller.static_cutter_controls(canvas=self.canvas)
+        self.controller.static_cutter_controls(canvas=self.canvas,ax=self.ax)
         self.canvas.show()
         self.canvas_widget = self.canvas.get_tk_widget()
         
