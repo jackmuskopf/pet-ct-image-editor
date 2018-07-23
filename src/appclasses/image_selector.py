@@ -4,13 +4,14 @@ class ImageSelector(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller.cutix = 0
 
         self.current_cut,self.queued_cuts = [], []
 
         self.__name__ = 'ImageSelector'
         self.controller = controller
         # self.controller.make_size(small=True)
-        self.controller.remove_temp_dirs()
+        self.controller.clean_up_data()
         label = tk.Label(self, text="Select Image", font=controller.title_font)
         label.grid(row=0,column=1,columnspan=2,padx=(30,0),pady=(0,20))
         
@@ -26,8 +27,6 @@ class ImageSelector(tk.Frame):
 
         self.make_buttons()
 
-        self.controller.remove_temp_dirs() # do this when we select new file
-        self.controller.nmice=None
         for b in self.buttons:
             b.destroy()
         self.make_buttons()
@@ -55,19 +54,21 @@ class ImageSelector(tk.Frame):
 
     def browse_file(self):
 
-        p = os.path.join('C:\\Users\\jmusko01\\Documents\\mycode\\preproc_work\\data\\pet','mpet3745a_em1_v1.pet.img')
-        i = PETImage(p)
-        self.controller.start_img(i)
+        # p = os.path.join('C:\\Users\\jmusko01\\Documents\\mycode\\preproc_work\\data\\pet','mpet3745a_em1_v1.pet.img')
+        # i = PETImage(p)
+        # self.controller.start_img(i)
 
 
-        # Tk().withdraw()
-        # fpath = askopenfilename()
-        # if fpath:
-        #     if fpath.endswith('.hdr'):
-        #         fpath = '.'.join(fpath.split('.')[:-1])
-        #     fname = ntpath.basename(fpath)
-        #     if is_pet(fname):
-        #         img = PETImage(fpath)
-        #     else:
-        #         img = CTImage(fpath)
-        #     self.controller.start_img(img)
+        Tk().withdraw()
+        fpath = askopenfilename()
+        if fpath:
+            if fpath.endswith('.hdr'):
+                fpath = '.'.join(fpath.split('.')[:-1])
+            fname = ntpath.basename(fpath)
+            if is_pet(fname):
+                img = PETImage(fpath)
+                self.controller.collapse = 'sum'
+            else:
+                img = CTImage(fpath)
+                self.controller.collapse = 'max'
+            self.controller.start_img(img)

@@ -8,8 +8,6 @@ import ntpath
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import warnings
-
-
 from pprint import pprint
 import inspect
 
@@ -44,6 +42,18 @@ class BaseImage:
         self.bpp = None # bytes per pixel
         self.tempdir = None
         self.data_lim = 10**7  # 10 MB
+        self.rotation_history = []
+
+        # color map for distinguishing cuts
+        self.all_colors = [
+            'red',
+            'green',
+            'blue',
+            'orange',
+            'magenta',
+            'cyan'
+        ]
+        self.colors = [x for x in self.all_colors]
 
 
     def center_on_zeros(self, mat, xdim, ydim):
@@ -150,8 +160,7 @@ class BaseImage:
 
         for s in self.strings:
             params[s] = '' if params[s] is None else params[s]
-    
-        # Parameters = recordclass('Parameters',' '.join(kwrds))
+
         self.params = Params(**params)
         return
 
@@ -415,7 +424,10 @@ class BaseImage:
         
         # update header variables
         cut_hdr_lines = hdr_lines
-        vars_to_update = ['x_dimension','y_dimension','z_dimension','dose','subject_weight','injection_time']
+        vars_to_update = ['x_dimension','y_dimension','z_dimension','subject_weight']
+        if self.type == 'pet':
+            vars_to_update += ['dose', 'injection_time']
+
         for v in vars_to_update:
             cut_hdr_lines = change_line(cut_hdr_lines,v,str(getattr(cut_img.params,v)))
         
@@ -462,6 +474,7 @@ class BaseImage:
         '''
         remove existing cuts
         '''
+        self.colors = [x for x in self.all_colors]
         for cut in self.cuts:
             try:
                 delattr(cut,'img_data')
@@ -526,9 +539,11 @@ class BaseImage:
         self.check_collapse_method(method)
         return getattr(self.img_data,method)(axis=3)
 
-    def rotate_on_axis(self, axis):
+    def rotate_on_axis(self, axis, log=False):
         self.check_data()
         axis = self.get_axis(axis)
+        if log:
+            self.rotation_history.append(axis)
         axes_to_flip = [0,1,2]
         axes_to_flip.remove(axis)
         self.img_data = np.flip(self.img_data,axes_to_flip[0])
@@ -648,7 +663,7 @@ class CTImage(BaseImage):
 
         self.integers = ['data_type','z_dimension','total_frames','x_dimension','y_dimension']
         self.per_frame = ['scale_factor','frame_duration'] 
-        self.strings = ['injection_time','animal_number','subject_weight','dose']
+        self.strings = ['animal_number','subject_weight']
         self.load_header()
         self.xdim = self.params.x_dimension
         self.ydim = self.params.y_dimension

@@ -81,7 +81,7 @@ class ImageRotator(tk.Frame):
 
     def rotate_on_axis(self,ax):
         self.controller.image.clean_cuts()
-        self.controller.image.rotate_on_axis(ax)
+        self.controller.image.rotate_on_axis(ax,log=True)
         self.controller.show_frame(self.__name__)
 
     def next_page(self):

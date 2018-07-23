@@ -15,7 +15,9 @@ class ConfirmSave(tk.Frame):
 
         # display header info
         main_frame = tk.Frame(self)
-        params_to_display = ['animal_number','injection_time','dose','subject_weight','out_filename']
+        params_to_display = ['animal_number','subject_weight','out_filename']
+        if self.controller.image.type == 'pet':
+            params_to_display += ['injection_time','dose']
         for i, cut in enumerate(self.controller.image.cuts):
             cut_frame = tk.Frame(main_frame)
             for param in params_to_display:
@@ -114,5 +116,29 @@ class ConfirmSave(tk.Frame):
             if not_saved:
                 pass
             else:
-                self.controller.remove_temp_dirs()
-                self.controller.show_frame('ImageSelector')
+                ynpopup = self.controller.make_splash(SplashObj=YesNoPopup,text="Apply same process to other image?")
+                apply_to_other = ynpopup.get_ans()
+                self.controller.stop_splash(ynpopup)
+                if apply_to_other:
+                    Tk().withdraw()
+                    fpath = askopenfilename()
+                    if not fpath:
+                        self.start_over()
+                    else:
+                        if fpath.endswith('.hdr'):
+                            fpath = '.'.join(fpath.split('.')[:-1])
+                        fname = ntpath.basename(fpath)
+                        if is_pet(fname):
+                            img = PETImage(fpath)
+                            self.controller.collapse = 'sum'
+                        else:
+                            img = CTImage(fpath)
+                            self.controller.collapse = 'max'
+                        self.controller.process_other(img)
+                else:
+                    self.start_over()
+
+
+    def start_over(self):
+        self.controller.clean_up_data()
+        self.controller.show_frame('ImageSelector')

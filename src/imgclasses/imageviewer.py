@@ -28,19 +28,6 @@ class ImageEditor:
 		# cut coords to be used and displayed on ImageCutter
 		self.queued_cuts = []
 
-		# color map for distinguishing cuts
-		self.colors = [
-			'red',
-			'green',
-			'blue',
-			'orange',
-			'magenta',
-			'cyan'
-		]
-
-
-
-
 
 		# for displaying cut (deprecated)
 		self.cutter = 'cross'
@@ -60,7 +47,7 @@ class ImageEditor:
 
 	def get_color(self):
 		try:
-			return self.colors.pop(0)
+			return self.image.colors.pop(0)
 		except IndexError:
 			return 'red'
 
@@ -94,7 +81,7 @@ class ImageEditor:
 
 		fn = '{}.dat'.format(self.image.cuts[ix].filename.split('.')[0])
 		color = self.image.cuts[ix].linecolor
-		self.colors = self.colors + [color,] if color not in self.colors else self.colors
+		self.image.colors = self.image.colors + [color,] if color not in self.image.colors else self.image.colors
 		del self.image.cuts[ix]
 		fp = os.path.join(self.image.tempdir,fn)
 		gc.collect()

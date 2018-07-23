@@ -224,8 +224,62 @@ class ImageGUI(tk.Tk,ImageEditor):
 
 
 
+    def process_other(self, img):
 
-    def remove_temp_dirs(self):
+        # get what we need from current image and then clean up
+        orig_dims = (self.image.params.x_dimension, self.image.params.y_dimension)
+        rotation_history = self.image.rotation_history
+        cuts_made = [
+                        {
+                            'cut_coords' : cut.cut_coords,
+                            'animal_number' : cut.params.animal_number,
+                            'subject_weight' : cut.params.subject_weight,
+                            'out_filename' : cut.out_filename
+                        } 
+                    for cut in self.image.cuts]
+        self.clean_up_data()
+
+
+
+        # load
+        loadscreen = self.make_splash(SplashObj=SplashScreen,text='Loading...')       
+        self.image = img
+        self.load_image()
+        self.tempdirs.append(self.image.tempdir)
+        self.stop_splash(loadscreen)
+
+        # process
+        loadscreen = self.make_splash(SplashObj=SplashScreen,text='Processing image...')       
+        
+        # do rotations
+        for r in rotation_history:
+            self.image.rotate_on_axis(r)
+
+
+        # get scale for cutting
+        new_dims = (self.image.params.x_dimension, self.image.params.y_dimension)
+        xscale = new_dims[0]/float(orig_dims[0])
+        yscale = new_dims[1]/float(orig_dims[1])
+
+        # do cutting and add params
+        for cut in cuts_made:
+            (xmin,xmax),(ymin,ymax) = cut['cut_coords']
+            xmin,xmax = round(xmin*xscale),round(xmax*xscale)
+            ymin,ymax = round(ymin*yscale),round(ymax*yscale)
+            self.current_cut = [(xmin,ymin),(xmax,ymax)]
+            self.add_cut()
+            self.image.cuts[-1].params.animal_number = cut['animal_number']
+            self.image.cuts[-1].params.subject_weight = cut['subject_weight']
+            self.image.cuts[-1].out_filename = cut['out_filename'].split('.')[0]+self.image.type+'.img'
+
+        self.stop_splash(loadscreen)
+
+        self.show_frame('ConfirmSave')
+
+
+
+
+    def clean_up_data(self):
         self.clean_memmaps()
         for directory in self.tempdirs:
             try:
