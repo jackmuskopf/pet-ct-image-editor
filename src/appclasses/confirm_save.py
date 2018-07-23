@@ -8,93 +8,165 @@ class ConfirmSave(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         self.__name__ = 'ConfirmSave'
-        self.additional_init()
 
-
-    def additional_init(self):
-        # pad space
-        tk.Label(self,text=' '*30).grid(column=0)
-        
         # title
-        label = tk.Label(self, text="Confirm", font=self.controller.title_font)
-        label.grid(row=0,column=0,columnspan=2,padx=(30,0),pady=(0,20))        
-
-        params_to_display = ['animal_number','injection_time','dose','subject_weight','filename']
-        for i,cut in enumerate(self.controller.image.cuts):
-            for j,param in enumerate(params_to_display):
-                jx=j+1
-                if param == 'filename':
-                    val = cut.filename
-                else:
-                    try:
-                        val = getattr(cut.params,param)
-                    except AttributeError:
-                        val = None
-                if val is not None:
-                    r,c = jx+(i//2)*len(params_to_display),i%2
-                    r = r+1 if i>1 else r
-                    px = c*10+5
-                    tk.Label(self,text='{0} : {1}'.format(get_label(param),val)).grid(row=r,column=c,padx=(px,0))
+        title = tk.Label(self, text="Confirm", font=self.controller.title_font)
         
-        # space
-        tk.Label(self,text=' '*50).grid(row=6,column=0,columnspan=2)
-        tk.Label(self,text=' '*50).grid(row=12,column=0,columnspan=2)
 
-        brow = len(params_to_display)*2+3
-        self.back_button = tk.Button(self, text="Back",command=self.back)
-        self.back_button.grid(column=0,row=brow)
-        self.save_button = tk.Button(self, text="Save",command=self.save_cuts)
-        self.save_button.grid(column=1,row=brow)
-        self.init_ani()
+        # display header info
+        main_frame = tk.Frame(self)
+        params_to_display = ['animal_number','injection_time','dose','subject_weight','out_filename']
+        for i, cut in enumerate(self.controller.image.cuts):
+            cut_frame = tk.Frame(main_frame)
+            for param in params_to_display:
+                if param == 'out_filename':
+                    val = cut.out_filename
+                else:
+                    val = getattr(cut.params,param)
+                tk.Label(cut_frame,text='{0} : {1}'.format(get_label(param),val,justify='left')).pack()
+            frame_col = i%2 
+            frame_row = i//2
+            cut_frame.grid(row=frame_row,column=frame_col,pady=(20,20),padx=(20,20))
 
-    def init_ani(self):
-        self.controller.animate_cuts()
+
+        # add save and back buttons
+        row = len(self.controller.image.cuts)//2+1
+        nbframe = tk.Frame(main_frame)
+        save = tk.Button(nbframe,text='Save',command=self.save)
+        back = tk.Button(nbframe,text='Back',command=self.back)
+        save.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
+        back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
+        nbframe.grid(row=row,column=0,columnspan=4,pady=(40,0))
+
+        # make figure
+        self.make_figure()
+
+        # grid to master frame
+        title.pack(side="top", fill="x", pady=10,expand=False)
+        main_frame.pack(side="right",fill='y',expand=False,pady=30)#.grid(row=1,column=2,padx=100)
+        self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
+
+        
 
 
-    def clear_widgets(self):
-        for widget in self.winfo_children():
-            widget.destroy()
+
+    def make_figure(self):
+
+        # make figure in tkinter
+        self.figframe = tk.Frame(self)
+        self.figure = Figure()
+        self.canvas = FigureCanvasTkAgg(self.figure, self.figframe)
+
+        self.controller.show_confirm_figure(figure=self.figure)
+
+        self.canvas.show()
+        self.canvas_widget = self.canvas.get_tk_widget()
+        
+        self.canvas_widget.pack(side="top",fill='both',expand=True) # self.canvas_widget.place(x=fx,y=fy)  # self.canvas_widget.pack(anchor=tk.W, side="left",padx=10) #
+
+        tbframe = tk.Frame(self.figframe)
+        toolbar = NavigationToolbar2TkAgg(self.canvas, tbframe)
+        toolbar.update()
+        self.canvas._tkcanvas.pack()  # toolbar # self.canvas._tkcanvas.place(x=fx,y=fy)
+        tbframe.pack(side="top",expand=False)
+
 
     def back(self):
         self.controller.show_frame('HeaderUI')
 
-    def check_path(self, path):
-        overwrite = [tf for tf in (path,path+'.hdr') if os.path.exists(tf)]
-        if overwrite:
-            ow_msg = '\n'.join(['The following files will be overwritten:']+overwrite+['Do you want to continue?'])
-            ynpopup = self.controller.make_splash(SplashObj=YesNoPopup,text=ow_msg)
-            yes_no = ynpopup.get_ans()
-            self.controller.stop_splash(ynpopup)
-            print('Returning {}'.format(yes_no))
-            return yes_no
-        else:
-            return True
+
+    def save(self):
+        print('Nothing yet.')
+
+
+
+    #     self.additional_init()
+
+
+    # def additional_init(self):
+    #     # pad space
+    #     tk.Label(self,text=' '*30).grid(column=0)
+        
+    #     # title
+    #     label = tk.Label(self, text="Confirm", font=self.controller.title_font)
+    #     label.grid(row=0,column=0,columnspan=2,padx=(30,0),pady=(0,20))        
+
+    #     params_to_display = ['animal_number','injection_time','dose','subject_weight','filename']
+    #     for i,cut in enumerate(self.controller.image.cuts):
+    #         for j,param in enumerate(params_to_display):
+    #             jx=j+1
+    #             if param == 'filename':
+    #                 val = cut.filename
+    #             else:
+    #                 try:
+    #                     val = getattr(cut.params,param)
+    #                 except AttributeError:
+    #                     val = None
+    #             if val is not None:
+    #                 r,c = jx+(i//2)*len(params_to_display),i%2
+    #                 r = r+1 if i>1 else r
+    #                 px = c*10+5
+    #                 tk.Label(self,text='{0} : {1}'.format(get_label(param),val)).grid(row=r,column=c,padx=(px,0))
+        
+    #     # space
+    #     tk.Label(self,text=' '*50).grid(row=6,column=0,columnspan=2)
+    #     tk.Label(self,text=' '*50).grid(row=12,column=0,columnspan=2)
+
+    #     brow = len(params_to_display)*2+3
+    #     self.back_button = tk.Button(self, text="Back",command=self.back)
+    #     self.back_button.grid(column=0,row=brow)
+    #     self.save_button = tk.Button(self, text="Save",command=self.save_cuts)
+    #     self.save_button.grid(column=1,row=brow)
+    #     self.init_ani()
+
+    # def init_ani(self):
+    #     self.controller.animate_cuts()
+
+
+    # def clear_widgets(self):
+    #     for widget in self.winfo_children():
+    #         widget.destroy()
+
+    # def back(self):
+    #     self.controller.show_frame('HeaderUI')
+
+    # def check_path(self, path):
+    #     overwrite = [tf for tf in (path,path+'.hdr') if os.path.exists(tf)]
+    #     if overwrite:
+    #         ow_msg = '\n'.join(['The following files will be overwritten:']+overwrite+['Do you want to continue?'])
+    #         ynpopup = self.controller.make_splash(SplashObj=YesNoPopup,text=ow_msg)
+    #         yes_no = ynpopup.get_ans()
+    #         self.controller.stop_splash(ynpopup)
+    #         print('Returning {}'.format(yes_no))
+    #         return yes_no
+    #     else:
+    #         return True
 
 
 
 
-    def save_cuts(self):
-        Tk().withdraw()
-        save_path = askdirectory()
-        if save_path:
-            '''
-            I think order should be preserved here.  
-            That is important for the ok_save check to match which file we are saving
-            '''
-            not_saved = []
-            new_files = [os.path.join(save_path,cut.filename) for cut in self.controller.image.cuts]
-            for i,filepath in enumerate(new_files):
-                ok_save = self.check_path(filepath)
-                if ok_save:
-                    savescreen = self.controller.make_splash(SplashObj=SplashScreen,text='Saving image...')
-                    self.controller.image.save_cut(index=i,path=save_path)
-                    self.controller.stop_splash(savescreen)
-                else:
-                    not_saved.append(1)
+    # def save_cuts(self):
+    #     Tk().withdraw()
+    #     save_path = askdirectory()
+    #     if save_path:
+    #         '''
+    #         I think order should be preserved here.  
+    #         That is important for the ok_save check to match which file we are saving
+    #         '''
+    #         not_saved = []
+    #         new_files = [os.path.join(save_path,cut.filename) for cut in self.controller.image.cuts]
+    #         for i,filepath in enumerate(new_files):
+    #             ok_save = self.check_path(filepath)
+    #             if ok_save:
+    #                 savescreen = self.controller.make_splash(SplashObj=SplashScreen,text='Saving image...')
+    #                 self.controller.image.save_cut(index=i,path=save_path)
+    #                 self.controller.stop_splash(savescreen)
+    #             else:
+    #                 not_saved.append(1)
 
-            # if any not saved, might need to revise filepath, don't reset.
-            if not_saved:
-                pass
-            else:
-                self.controller.remove_temp_dirs()
-                self.controller.show_frame('ImageSelector')
+    #         # if any not saved, might need to revise filepath, don't reset.
+    #         if not_saved:
+    #             pass
+    #         else:
+    #             self.controller.remove_temp_dirs()
+    #             self.controller.show_frame('ImageSelector')

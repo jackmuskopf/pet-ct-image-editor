@@ -10,8 +10,9 @@ class HeaderUI(tk.Frame):
         self.parent = parent
         self.controller = controller
 
+        self.cut = self.controller.image.cuts[self.controller.cutix]
 
-        title = tk.Label(self, text="Header Information Cut {}".format(self.controller.cutix), font=controller.title_font, justify='center')
+        title = tk.Label(self, text="Header Information Cut {}".format(self.controller.cutix+1), font=controller.title_font, justify='center')
 
         # controls frame
         controls_frame = tk.Frame(self)
@@ -23,26 +24,33 @@ class HeaderUI(tk.Frame):
         nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
         back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
         nbframe.grid(row=4,column=0,columnspan=4,pady=(40,0))
-        # self.controller.next_back(controls_frame,n_action=self.next_page,b_action=self.back)
+
 
         # img info
         img_info = controller.get_img_info(controls_frame)
-        img_info.grid(row=0,column=0,pady=(0,50))
+        img_info.grid(row=0,column=0,pady=(0,0))
 
         # exposure scale
-        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
-        ec,er = 3,1
+        escale_frame = tk.Frame(controls_frame)
+        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(escale_frame)
+        ec,er = 0,0
         epx = (50,50)
         self.escale_label.grid(column=ec,row=er,padx=epx)
         self.escaler.grid(column=ec,row=er+1,padx=epx)
         self.escale_apply.grid(column=ec,row=er+2,padx=epx)
+        escale_frame.grid(row=1,column=2)
+
+        # input header information
+        self.header_frame = tk.Frame(controls_frame)
+        self.init_entries()
+        self.header_frame.grid(row=1,column=0,pady=30)
 
         # make figure
         self.make_figure()
 
         # grid to master frame
         title.pack(side="top", fill="x", pady=10,expand=False)
-        controls_frame.pack(side="right",fill='y',expand=False,pady=100)#.grid(row=1,column=2,padx=100)
+        controls_frame.pack(side="right",fill='y',expand=False,pady=30)#.grid(row=1,column=2,padx=100)
         self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
 
         
@@ -69,18 +77,68 @@ class HeaderUI(tk.Frame):
         
 
     def next(self):
+        self.update_cut()
         if self.controller.cutix == len(self.controller.image.cuts)-1:
-            print('That"s all')
+            self.controller.show_frame('ConfirmSave')
         else:
             self.controller.cutix += 1
             self.controller.show_frame(self.__name__)
 
     def back(self):
+        self.update_cut()
         if self.controller.cutix == 0:
             self.controller.show_frame('ImageCutter')
         else:
             self.controller.cutix -= 1
             self.controller.show_frame(self.__name__)
+
+
+    def init_entries(self):
+
+        # figure which attributes are relevant for image type
+        self.hdr_attrs = ['out_filename','animal_number','subject_weight']
+        if self.controller.image.type == 'ct':
+            pass
+        elif self.controller.image.type == 'pet':
+            self.hdr_attrs += ['dose','injection_time']
+        else:
+            raise ValueError('Unexpected image type: {}'.format(self.controller.image.type))
+
+        # create and place tk entries and vars for each input item
+        for i,attr in enumerate(self.hdr_attrs):
+            setattr(self,attr,tk.StringVar(value=''))
+            entry = tk.Entry(self.header_frame,textvariable=getattr(self,attr),width=40)
+            entry_attr = attr+'_entry'
+            setattr(self,entry_attr,entry)
+            getattr(self,entry_attr).grid(row=i,column=1)
+            label_attr = attr+'_label'
+            setattr(self,label_attr,tk.Label(self.header_frame,text=get_label(attr)))
+            getattr(self,label_attr).grid(row=i,column=0)
+
+        # set the entry variables according to values in the cut params (may have been updated by previous input in this program)
+        for attr in self.hdr_attrs:
+            if (not attr=='out_filename'):
+                _ = getattr(self.cut.params,attr)
+                if _ is not None:
+                    getattr(self,attr).set(_)
+                else:
+                    getattr(self,attr).set('')
+
+        self.out_filename.set(self.cut.out_filename)
+
+
+    def update_cut(self):
+        for attr in self.hdr_attrs:
+            entry_attr = attr+'_entry'
+            entry = getattr(self,entry_attr)
+            val = entry.get().strip()
+            if attr=='out_filename':
+                self.cut.out_filename = val
+            else:
+                setattr(self.cut.params, attr, val)
+
+
+
 
     # def additional_init(self):
     #     self.reset_attrs()

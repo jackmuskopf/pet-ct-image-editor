@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 import numpy as np
+import math
 import warnings
 import gc
+import os
 from .baseimage import PETImage, SubImage
 
 class ImageEditor:
@@ -45,23 +47,39 @@ class ImageEditor:
 						'no_cut' : 1}
 
 
-
-
-
-
 	def add_cut(self):
 		length = len(self.current_cut)
-		if  length != 4:
+		if  length < 2:
 			print('self.current_cut is not the right length: {}'.format(length))
 		else:
-			self.queued_cuts.append(self.current_cut)
+			cut = self.current_cut
+			ix = len(self.image.cuts) + 1
+			xs = [p[0] for p in cut]
+			ys = [p[1] for p in cut]
+			xmax,xmin = max(xs),min(xs)
+			ymax,ymin = max(ys),min(ys)
+			fname, data = self.image.submemmap(ix=ix, data=self.image.img_data[:,ymin:ymax,xmin:xmax,:])
+			new_img = SubImage(parent_image=self.image, img_data=data, filename=fname, cut_coords=[(xmin,xmax),
+																								  (ymin,ymax)])
+			self.image.cuts.append(new_img)
 			self.current_cut = []
 
 
-	def remove_cut(self,ix):
-		if self.queued_cuts:
-			self.queued_cuts.pop(ix)
 
+
+	def remove_cut(self,ix):
+		try:
+			delattr(self.image.cuts[ix],'img_data')
+		except AttributeError:
+			pass
+
+		fn = '{}.dat'.format(self.image.cuts[ix].filename.split('.')[0])
+		del self.image.cuts[ix]
+		fp = os.path.join(self.image.tempdir,fn)
+		gc.collect()
+		if os.path.exists(fp):
+			os.remove(fp)
+        
 
 
 	def init_cutter_coords(self):
@@ -150,9 +168,10 @@ class ImageEditor:
 	def static_cutter(self, figure, frame_range=None):
 
 		def add_lines(ax):
-			for cut in self.queued_cuts:
-				xs = [p[0] for p in cut]
-				ys = [p[1] for p in cut]
+			for cut in self.image.cuts:
+				coords = cut.cut_coords
+				xs = coords[0]
+				ys = coords[1]
 				xmax,xmin = max(xs),min(xs)
 				ymax,ymin = max(ys),min(ys)
 				ax.plot((xmin,xmax),(ymax,ymax),'r-')
@@ -198,17 +217,6 @@ class ImageEditor:
 
 
 
-	def cut_image(self):
-		self.image.cuts = []
-		for ix,cut in enumerate(self.queued_cuts):
-			xs = [p[0] for p in cut]
-			ys = [p[1] for p in cut]
-			xmax,xmin = max(xs),min(xs)
-			ymax,ymin = max(ys),min(ys)
-			fname, data = self.image.submemmap(ix=ix, data=self.image.img_data[:,ymin:ymax,xmin:xmax,:])
-			new_img = SubImage(parent_image=self.image, img_data=data, filename=fname, cut_coords=[(xmin,xmax),
-																								  (ymin,ymax)])
-			self.image.cuts.append(new_img)
 
 	def center_on_zeros(self, mat, xdim, ydim):
 		if len(mat.shape) != 2:
@@ -277,6 +285,50 @@ class ImageEditor:
 
 		figure.suptitle('View from feet (z-axis)', fontsize=14)
 		figure.tight_layout()
+
+
+
+
+
+	def show_confirm_figure(self, figure):
+
+		cuts = self.image.cuts
+
+		ncols = int(len(cuts)>2) + 1
+		nrows = math.ceil(len(cuts)/2.0)
+
+		for i,cut in enumerate(cuts):
+
+			(xmin,xmax),(ymin,ymax) = cut.cut_coords
+			axis = 'z'
+			axis = self.image.get_axis(axis)
+
+			ax = figure.add_subplot("{}{}{}".format(nrows,ncols,i+1))
+
+			# original image
+			frame = self.image.collapse_over_frames(method=self.collapse)
+			mat = getattr(frame,self.collapse)(axis=axis)
+			mat = normalize(mat)*self.escale
+
+			
+			ax.imshow(mat,cmap="gray",clim=(0,1))
+			ax.set_xlim(0,mat.shape[1])
+			ax.set_ylim(0,mat.shape[0])
+
+			# draw red box around cut mouse
+			ax.plot((xmin,xmax),(ymax,ymax),'r-')
+			ax.plot((xmin,xmin),(ymin,ymax),'r-')
+			ax.plot((xmin,xmax),(ymin,ymin),'r-')
+			ax.plot((xmax,xmax),(ymin,ymax),'r-')
+
+
+
+		figure.tight_layout()
+
+
+
+
+
 
 
 

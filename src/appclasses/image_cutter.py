@@ -17,7 +17,7 @@ class ImageCutter(tk.Frame):
 
         # add next and back buttons
         nbframe = tk.Frame(controls_frame)
-        nxt = tk.Button(nbframe,text='Make cuts',command=self.make_cuts)
+        nxt = tk.Button(nbframe,text='Next',command=self.next)
         back = tk.Button(nbframe,text='Back',command=self.back)
         nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
         back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
@@ -32,14 +32,14 @@ class ImageCutter(tk.Frame):
         cut_controls.grid(row=3,column=2)
 
         # rm cut frame
-        ncuts = len(self.controller.queued_cuts)
+        ncuts = len(self.controller.image.cuts)
         rm_button_frame = None
         if ncuts:
             rm_button_frame = tk.Frame(controls_frame)
             for ix in range(ncuts):
                 rmbutton = tk.Button(rm_button_frame,text='Remove cut {}'.format(ix+1),command=lambda ix=ix:self.remove_cut(ix))
                 rmbutton.pack(side="top")
-            rm_button_frame.grid(row=1,column=4,rowspan=ncuts,padx=(30,30))
+            rm_button_frame.grid(row=1,column=0,rowspan=ncuts,padx=(30,30))
 
         # img info
         img_info = controller.get_img_info(controls_frame)
@@ -58,7 +58,7 @@ class ImageCutter(tk.Frame):
 
         # grid to master frame
         title.pack(side="top", fill="x", pady=10,expand=False)
-        controls_frame.pack(side="right",fill='y',expand=False,pady=100)#.grid(row=1,column=2,padx=100)
+        controls_frame.pack(side="right",fill='y',expand=False,pady=30)#.grid(row=1,column=2,padx=100)
         self.figframe.pack(side="left",fill='both',expand=True,padx=(30,30),pady=30)#.grid(row=1,column=0,padx=10)
 
         
@@ -103,6 +103,11 @@ class ImageCutter(tk.Frame):
             self.controller.current_cut.pop(-1)
             self.reset()
 
-    def make_cuts(self):
-        self.controller.cut_image()
-        self.controller.show_frame('HeaderUI')
+    def next(self):
+        if self.controller.image.cuts:
+            self.controller.show_frame('HeaderUI')
+        else:
+            print('No cuts made yet')
+        # self.controller.cut_image()
+        # if self.controller.image.cuts:
+        #     self.controller.show_frame('HeaderUI')

@@ -49,12 +49,17 @@ class BaseImage:
     def submemmap(self, ix, data):
         if self.tempdir is None:
             raise ValueError('self.tempdir is None in self.sub_memmap.')
-        fnpcs = self.filename.split('.')
-        fnpcs[0] = fnpcs[0] + '_s{}'.format(ix)
-        filename = '.'.join(fnpcs)
-        img_temp_name = os.path.join(self.tempdir,'{}.dat'.format(filename.split('.')[0]))
-        if os.path.exists(img_temp_name):
-            try_rmfile(img_temp_name)
+
+        
+        found_filename = False
+        while not found_filename:
+            fnpcs = self.filename.split('.')
+            fnpcs[0] = fnpcs[0] + '_s{}'.format(ix)
+            filename = '.'.join(fnpcs)
+            img_temp_name = os.path.join(self.tempdir,'{}.dat'.format(filename.split('.')[0]))
+            found_filename = not os.path.exists(img_temp_name)
+            ix+=1
+
         dfile = np.memmap(img_temp_name, mode='w+', dtype='float32', shape=data.shape)
         dfile[:] = data[:]
         return filename, dfile
@@ -415,24 +420,20 @@ class BaseImage:
         '''
         remove existing cuts
         '''
-        gc.collect()
-        if len(self.cuts)>1:
-            for cut in self.cuts:
-                try:
-                    delattr(cut,'img_data')
-                except AttributeError:
-                    pass
-                fn = '{}.dat'.format(cut.filename.split('.')[0])
-                
-                del cut
-                gc.collect()  
-                fp = os.path.join(self.tempdir,fn)
-                if os.path.exists(fp):
-                    try_rmfile(fp)
+        for cut in self.cuts:
+            try:
+                delattr(cut,'img_data')
+            except AttributeError:
+                pass
+            fn = '{}.dat'.format(cut.filename.split('.')[0])
+            
+            del cut
+            gc.collect()  
+            fp = os.path.join(self.tempdir,fn)
+            if os.path.exists(fp):
+                try_rmfile(fp)
 
-        else:   # don't want to delete original img_data (just one cut uses original img data)
-            self.cuts = []
-            gc.collect()
+        self.cuts = []
 
     def get_axis(self,axis):
         '''
@@ -502,8 +503,9 @@ class SubImage(BaseImage):
 
     def __init__(self, parent_image, img_data, filename, cut_coords):
 
-        # make tempfile
         self.filename = filename
+
+        self.out_filename = filename
 
         BaseImage.__init__(self, filepath='./{}'.format(self.filename), img_data=img_data)
         self.type = parent_image.type
