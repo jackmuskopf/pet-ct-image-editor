@@ -380,7 +380,7 @@ class BaseImage:
             total_pixels = len(data)
             bytes_to_write = total_pixels*bpp
             write_lim = self.data_lim
-            print('Will read {0} {1}MB chunks.'.format(bytes_to_write/write_lim,int(write_lim/10**6)))
+            print('Will write {0} {1}MB chunks.'.format(bytes_to_write/write_lim,int(write_lim/10**6)))
             ix = 0
             while bytes_to_write > write_lim:
                 print('Writing new chunk; {}MB left'.format(int(bytes_to_write/10**6)))

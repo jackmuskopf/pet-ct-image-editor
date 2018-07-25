@@ -290,6 +290,10 @@ class ImageGUI(tk.Tk,ImageEditor):
         self.tempdirs.append(self.image.tempdir)
         self.stop_splash(loadscreen)
 
+        # do rotations
+        for r in rotation_history:
+            self.image.rotate_on_axis(r)
+
         # process
         self.apply_process()
 
@@ -300,10 +304,6 @@ class ImageGUI(tk.Tk,ImageEditor):
         orig_dims = self.process_made['original_dimensions']
         rotation_history = self.process_made['rotation_history']
         cuts_made = self.process_made['cuts_made']
-        
-        # do rotations
-        for r in rotation_history:
-            self.image.rotate_on_axis(r)
 
 
         # get scale for cutting

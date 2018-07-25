@@ -30,7 +30,7 @@ class ImageCutter(tk.Frame):
         undo_click = tk.Button(cut_controls,text='Undo click',command=self.undo_click)
         undo_click.grid(row=0,column=0)
         if self.controller.process_made:
-            reset_process = tk.Button(cut_controls,text="Reset applied process",command=self.reset_process)
+            reset_process = tk.Button(cut_controls,text="Reset applied cuts",command=self.reset_process)
             reset_process.grid(row=1,column=0,columnspan=2,pady=(30,15))
         cut_controls.grid(row=3,column=2)
 
