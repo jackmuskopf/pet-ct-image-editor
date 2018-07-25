@@ -483,12 +483,13 @@ class BaseImage:
             fn = '{}.dat'.format(cut.filename.split('.')[0])
             
             del cut
-            gc.collect()  
+             
             fp = os.path.join(self.tempdir,fn)
             if os.path.exists(fp):
                 try_rmfile(fp)
 
         self.cuts = []
+        gc.collect() 
 
     def get_axis(self,axis):
         '''

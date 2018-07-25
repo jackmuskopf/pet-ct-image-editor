@@ -55,6 +55,9 @@ class ImageGUI(tk.Tk,ImageEditor):
         # title font var
         self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", slant="italic")
 
+        # store whether we are applying same process to other image (see self.process_other)
+        self.process_made = None
+
         # the container is where we'll stack a bunch of frames
         # on top of each other, then the one we want visible
         # will be raised above the others
@@ -135,15 +138,14 @@ class ImageGUI(tk.Tk,ImageEditor):
             self.collapse = 'sum'
             self.reset_current_frame()
 
-        switch_frame = tk.Frame(frame)
 
-        mb = tk.Button(switch_frame, text='Collapse max', command=set_max)
+
+        mb = tk.Button(frame, text='Collapse max', command=set_max)
         mb.grid(row=0,column=0,pady=(0,0))
 
-        sb = tk.Button(switch_frame, text='Collapse sum', command=set_sum)
+        sb = tk.Button(frame, text='Collapse sum', command=set_sum)
         sb.grid(row=1,column=0,pady=(5,30))
 
-        return switch_frame
 
 
 
@@ -179,14 +181,21 @@ class ImageGUI(tk.Tk,ImageEditor):
 
 
 
-    def init_escaler(self, frame):
+    def add_exposure_controls(self, frame):
+
+        self.add_collapse_switch(frame)
 
         escaler = self.make_escale(frame)
         escale_label = tk.Label(frame, text="Exposure Scale:",justify=tk.LEFT)
         escale_apply = tk.Button(frame, text="Apply",command=self.adjust_escale)
+
+        epx = (50,50)
+        ec,er=0,2
+        escale_label.grid(column=ec,row=er,padx=epx)
+        escaler.grid(column=ec,row=er+1,padx=epx)
+        escale_apply.grid(column=ec,row=er+2,padx=epx)
         
-        return (escaler,escale_label,escale_apply)
-        # self.place_escale(frame)
+
 
     def make_escale(self, frame):
         self.str_scale.set(str(self.escale))
@@ -264,6 +273,12 @@ class ImageGUI(tk.Tk,ImageEditor):
                             'out_filename' : cut.out_filename
                         } 
                     for cut in self.image.cuts]
+
+        self.process_made = {
+            'original_dimensions' : orig_dims,
+            'rotation_history' : rotation_history,
+            'cuts_made' : cuts_made
+        }
         self.clean_up_data()
 
 
@@ -276,7 +291,15 @@ class ImageGUI(tk.Tk,ImageEditor):
         self.stop_splash(loadscreen)
 
         # process
-        loadscreen = self.make_splash(SplashObj=SplashScreen,text='Processing image...')       
+        self.apply_process()
+
+
+    def apply_process(self):
+
+        # get stored processing vals
+        orig_dims = self.process_made['original_dimensions']
+        rotation_history = self.process_made['rotation_history']
+        cuts_made = self.process_made['cuts_made']
         
         # do rotations
         for r in rotation_history:
@@ -289,6 +312,7 @@ class ImageGUI(tk.Tk,ImageEditor):
         yscale = new_dims[1]/float(orig_dims[1])
 
         # do cutting and add params
+        self.image.clean_cuts()
         for cut in cuts_made:
             (xmin,xmax),(ymin,ymax) = cut['cut_coords']
             xmin,xmax = round(xmin*xscale),round(xmax*xscale)
@@ -297,9 +321,7 @@ class ImageGUI(tk.Tk,ImageEditor):
             self.add_cut()
             self.image.cuts[-1].params.animal_number = cut['animal_number']
             self.image.cuts[-1].params.subject_weight = cut['subject_weight']
-            self.image.cuts[-1].out_filename = cut['out_filename'].split('.')[0]+self.image.type+'.img'
-
-        self.stop_splash(loadscreen)
+            self.image.cuts[-1].out_filename = cut['out_filename'].split('.')[0]+'.{}'.format(self.image.type)+'.img'
 
         self.show_frame('ConfirmSave')
 

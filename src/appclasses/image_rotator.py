@@ -11,8 +11,6 @@ class ImageRotator(tk.Frame):
         
         # title
         title = tk.Label(self, text="Rotate Image", font=controller.title_font, justify='center')
-        
-        
 
         # controls frame
         controls_frame = tk.Frame(self)
@@ -30,23 +28,17 @@ class ImageRotator(tk.Frame):
         img_info = controller.get_img_info(controls_frame)
         img_info.grid(row=0,column=0,pady=(0,50))
 
-        # collapse switch
-        collapse_switch = self.controller.add_collapse_switch(controls_frame)
-        collapse_switch.grid(row=0,column=3,padx=(30,30))
-
-        # exposure scale
-        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
+        # exposure controls
+        exp_frame = tk.Frame(controls_frame)
+        self.controller.add_exposure_controls(exp_frame)
         ec,er = 3,1
-        epx = (50,50)
-        self.escale_label.grid(column=ec,row=er,padx=epx)
-        self.escaler.grid(column=ec,row=er+1,padx=epx)
-        self.escale_apply.grid(column=ec,row=er+2,padx=epx)
+        exp_frame.grid(row=0,column=3,rowspan=4)
 
         # rotation buttons
         rbr,rbc = 1,1 # rotbx,rotby = 200,220
-        tk.Button(controls_frame, text="Rotate on x axis", command=lambda : self.rotate_on_axis('x')).grid(row=rbr,column=rbc)
-        tk.Button(controls_frame, text="Rotate on y axis", command=lambda : self.rotate_on_axis('y')).grid(row=rbr+1,column=rbc)
-        tk.Button(controls_frame, text="Rotate on z axis", command=lambda : self.rotate_on_axis('z')).grid(row=rbr+2,column=rbc)
+        tk.Button(controls_frame, text="Rotate on x axis", command=lambda : self.rotate_on_axis('x')).grid(row=rbr,column=rbc,pady=(5,5))
+        tk.Button(controls_frame, text="Rotate on y axis", command=lambda : self.rotate_on_axis('y')).grid(row=rbr+1,column=rbc,pady=(5,5))
+        tk.Button(controls_frame, text="Rotate on z axis", command=lambda : self.rotate_on_axis('z')).grid(row=rbr+2,column=rbc,pady=(5,5))
         
         # make figure
         self.make_figure()

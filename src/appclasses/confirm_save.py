@@ -121,7 +121,7 @@ class ConfirmSave(tk.Frame):
                 self.controller.stop_splash(ynpopup)
                 if apply_to_other:
                     Tk().withdraw()
-                    fpath = askopenfilename()
+                    fpath = askopenfilename(initialdir=os.path.split(self.controller.image.filepath)[0])
                     if not fpath:
                         self.start_over()
                     else:

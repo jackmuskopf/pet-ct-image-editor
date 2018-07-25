@@ -21,14 +21,17 @@ class ImageCutter(tk.Frame):
         back = tk.Button(nbframe,text='Back',command=self.back)
         nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
         back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
-        nbframe.grid(row=4,column=0,columnspan=4,pady=(40,0))
+        nbframe.grid(row=4,column=0,columnspan=4,pady=(70,0))
        
         # add cut to queued cuts
         cut_controls = tk.Frame(controls_frame)
         add_cut = tk.Button(cut_controls,text='Add cut',command=self.add_cut)
-        add_cut.pack(side=tk.RIGHT,padx=(30,0))
+        add_cut.grid(row=0,column=1,padx=(30,0))
         undo_click = tk.Button(cut_controls,text='Undo click',command=self.undo_click)
-        undo_click.pack(side=tk.LEFT)
+        undo_click.grid(row=0,column=0)
+        if self.controller.process_made:
+            reset_process = tk.Button(cut_controls,text="Reset applied process",command=self.reset_process)
+            reset_process.grid(row=1,column=0,columnspan=2,pady=(30,15))
         cut_controls.grid(row=3,column=2)
 
         # rm cut frame
@@ -37,7 +40,7 @@ class ImageCutter(tk.Frame):
         if ncuts:
             rm_button_frame = tk.Frame(controls_frame)
             for ix,cut in enumerate(self.controller.image.cuts):
-                rmbutton = tk.Button(rm_button_frame,text='Remove cut {}'.format(ix+1),command=lambda ix=ix:self.remove_cut(ix),bg=cut.linecolor)
+                rmbutton = tk.Button(rm_button_frame,text='Remove cut {} ({})'.format(ix+1,cut.linecolor),command=lambda ix=ix:self.remove_cut(ix),bg=cut.linecolor)
                 rmbutton.pack(side="top")
             rm_button_frame.grid(row=1,column=0,rowspan=ncuts,padx=(30,30))
 
@@ -45,13 +48,11 @@ class ImageCutter(tk.Frame):
         img_info = controller.get_img_info(controls_frame)
         img_info.grid(row=0,column=0,pady=(0,50))
 
-        # exposure scale
-        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
-        ec,er = 3,0
-        epx = (50,50)
-        self.escale_label.grid(column=ec,row=er,padx=epx)
-        self.escaler.grid(column=ec,row=er+1,padx=epx)
-        self.escale_apply.grid(column=ec,row=er+2,padx=epx)
+        # exposure controls
+        exp_frame = tk.Frame(controls_frame)
+        self.controller.add_exposure_controls(exp_frame)
+        ec,er = 3,1
+        exp_frame.grid(row=0,column=3,rowspan=4)
 
         # make figure
         self.make_figure()
@@ -102,6 +103,10 @@ class ImageCutter(tk.Frame):
         if self.controller.current_cut:
             self.controller.current_cut.pop(-1)
             self.reset()
+
+    def reset_process(self):
+        self.controller.apply_process()
+        self.reset()
 
     def next(self):
         if self.controller.image.cuts:

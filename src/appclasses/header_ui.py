@@ -30,15 +30,11 @@ class HeaderUI(tk.Frame):
         img_info = controller.get_img_info(controls_frame)
         img_info.grid(row=0,column=0,pady=(0,0))
 
-        # exposure scale
-        escale_frame = tk.Frame(controls_frame)
-        self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(escale_frame)
-        ec,er = 0,0
-        epx = (50,50)
-        self.escale_label.grid(column=ec,row=er,padx=epx)
-        self.escaler.grid(column=ec,row=er+1,padx=epx)
-        self.escale_apply.grid(column=ec,row=er+2,padx=epx)
-        escale_frame.grid(row=1,column=2)
+        # exposure controls
+        exp_frame = tk.Frame(controls_frame)
+        self.controller.add_exposure_controls(exp_frame)
+        ec,er = 0,1
+        exp_frame.grid(row=0,column=3,rowspan=4)
 
         # input header information
         self.header_frame = tk.Frame(controls_frame)

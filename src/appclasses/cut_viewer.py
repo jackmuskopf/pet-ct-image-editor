@@ -1,5 +1,9 @@
 from .dependencies import *
 
+"""
+ THIS CLASS IS DEPRECATED
+"""
+
 class CutViewer(tk.Frame):
 
     def __init__(self, parent, controller):
