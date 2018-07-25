@@ -120,6 +120,33 @@ class ImageGUI(tk.Tk,ImageEditor):
         self.raised_frame.tkraise()
 
 
+    def reset_current_frame(self):
+        self.show_frame(self.raised_frame.__name__)
+
+
+    def add_collapse_switch(self, frame):
+
+        def set_max():
+            self.collapse = 'max'
+            self.reset_current_frame()
+
+        
+        def set_sum():
+            self.collapse = 'sum'
+            self.reset_current_frame()
+
+        switch_frame = tk.Frame(frame)
+
+        mb = tk.Button(switch_frame, text='Collapse max', command=set_max)
+        mb.grid(row=0,column=0,pady=(0,0))
+
+        sb = tk.Button(switch_frame, text='Collapse sum', command=set_sum)
+        sb.grid(row=1,column=0,pady=(5,30))
+
+        return switch_frame
+
+
+
 
 
     def make_splash(self,SplashObj=SplashScreen,text='Loading...'):

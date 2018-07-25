@@ -30,6 +30,10 @@ class ImageRotator(tk.Frame):
         img_info = controller.get_img_info(controls_frame)
         img_info.grid(row=0,column=0,pady=(0,50))
 
+        # collapse switch
+        collapse_switch = self.controller.add_collapse_switch(controls_frame)
+        collapse_switch.grid(row=0,column=3,padx=(30,30))
+
         # exposure scale
         self.escaler, self.escale_label, self.escale_apply = self.controller.init_escaler(controls_frame)
         ec,er = 3,1
@@ -39,7 +43,7 @@ class ImageRotator(tk.Frame):
         self.escale_apply.grid(column=ec,row=er+2,padx=epx)
 
         # rotation buttons
-        rbr,rbc = 1,2 # rotbx,rotby = 200,220
+        rbr,rbc = 1,1 # rotbx,rotby = 200,220
         tk.Button(controls_frame, text="Rotate on x axis", command=lambda : self.rotate_on_axis('x')).grid(row=rbr,column=rbc)
         tk.Button(controls_frame, text="Rotate on y axis", command=lambda : self.rotate_on_axis('y')).grid(row=rbr+1,column=rbc)
         tk.Button(controls_frame, text="Rotate on z axis", command=lambda : self.rotate_on_axis('z')).grid(row=rbr+2,column=rbc)
