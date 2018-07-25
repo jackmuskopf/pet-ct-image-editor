@@ -185,10 +185,10 @@ class BaseImage:
             '''
             to_read = bpp*matsize
             read_lim = self.data_lim
-            print('Will read {0} {1}MB chunks.'.format(to_read/read_lim,int(read_lim/10**6)))
+            # print('Will read {0} {1}MB chunks.'.format(to_read/read_lim,int(read_lim/10**6)))
             ix = 0
             while to_read > read_lim:
-                print('Reading new chunk; {}MB left'.format(int(to_read/10**6)))
+                # print('Reading new chunk; {}MB left'.format(int(to_read/10**6)))
                 nbytes = read_lim
                 npixels = int(nbytes/bpp)
                 chunk = np.array(struct.unpack(sf*npixels,img_file.read(nbytes)))
@@ -196,7 +196,7 @@ class BaseImage:
                 to_read -= read_lim
                 ix+=npixels
 
-            print('Reading new chunk; {}MB left'.format(int(to_read/10**6)))
+            # print('Reading new chunk; {}MB left'.format(int(to_read/10**6)))
             nbytes = to_read
             npixels = int(nbytes/bpp)
             chunk = np.array(struct.unpack(sf*npixels,img_file.read(nbytes)))
@@ -592,7 +592,7 @@ class PETImage(BaseImage):
         '''
         Needs header file and data file in same directory
         '''
-        BaseImage.__init__(self, filepath, img_data)
+        BaseImage.__init__(self, filepath=filepath, img_data=img_data)
         self.type = 'pet'
 
         # for header file info

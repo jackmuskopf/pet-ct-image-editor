@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use("TkAgg")
+
 from .dependencies import *
 from .confirm_save import ConfirmSave
 from .header_ui import HeaderUI
