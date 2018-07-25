@@ -4,12 +4,12 @@ class ImageSelector(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        self.controller.cutix = 0
+        self.__name__ = 'ImageSelector'
+        self.controller = controller        
+
 
         self.current_cut,self.queued_cuts = [], []
-
-        self.__name__ = 'ImageSelector'
-        self.controller = controller
+        self.controller.cutix = 0        
         # self.controller.make_size(small=True)
         self.controller.clean_up_data()
         label = tk.Label(self, text="Select Image", font=controller.title_font)
