@@ -228,9 +228,6 @@ def analyze_image(img, nmice=0):
 			print('Found {} mice'.format(len(mouses)))
 
 
-			if not (nmice == len(mouses)):
-				return analyze_image(img,nmice=len(mouses))
-
 
 			ax = do_plot(show_mat*10,title='original')
 
