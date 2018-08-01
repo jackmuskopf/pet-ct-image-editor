@@ -5,6 +5,8 @@ import numpy as np
 import gc
 import copy
 import ntpath
+import shutil
+import tempfile
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import warnings
@@ -207,6 +209,9 @@ class BaseImage:
         x,y,z,fs = self.params.x_dimension,self.params.y_dimension,self.params.z_dimension,self.params.total_frames
         print('File dimensions: ({},{},{},{})'.format(x,y,z,fs))
         ps = self.params
+
+        if self.tempdir is None:
+            self.tempdir = tempfile.mkdtemp()
 
         if plane_range is None:
             if ps.z_dimension > 1:
@@ -489,7 +494,17 @@ class BaseImage:
                 try_rmfile(fp)
 
         self.cuts = []
-        gc.collect() 
+        gc.collect()
+
+
+    def unload_image(self):
+        self.clean_cuts()
+        self.img_data = None
+        gc.collect()
+        if self.tempdir:
+            shutil.rmtree(self.tempdir)
+        self.tempdir = None
+
 
     def get_axis(self,axis):
         '''
