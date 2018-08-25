@@ -38,6 +38,11 @@ class HeaderUI(tk.Frame):
 
         # input header information
         self.header_frame = tk.Frame(controls_frame)
+
+        # info frame (for displaying parent image header information)
+        self.info_frame = tk.Frame(controls_frame)
+        self.info_string = ''
+
         self.init_entries()
         self.header_frame.grid(row=1,column=0,pady=30)
 

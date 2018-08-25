@@ -591,6 +591,9 @@ class SubImage(BaseImage):
         self.zdim, self.ydim, self.xdim, self.nframes = shape
         self.x_dimension,self.y_dimension,self.z_dimension = self.xdim,self.ydim,self.zdim
         self.params = copy.copy(parent_image.params)
+        reset_params = ['animal_number', 'subject_weight', 'dose', 'injection_time']
+        for p in reset_params:
+            setattr(self.params,p,'')
         self.params.x_dimension,self.params.y_dimension,self.params.z_dimension, self.params.total_frames = self.xdim,self.ydim,self.zdim, self.nframes
         self.bounds={0 : (self.ydim, self.xdim), 
                     1 : (self.xdim, self.zdim),

@@ -79,8 +79,6 @@ class ImageCutter(tk.Frame):
         self.canvas_widget.pack(side="top",fill='both',expand=True) 
 
         tbframe = tk.Frame(self.figframe)
-        toolbar = NavigationToolbar2TkAgg(self.canvas, tbframe)
-        toolbar.update()
         self.canvas._tkcanvas.pack() 
         tbframe.pack(side="top",expand=False)
 
