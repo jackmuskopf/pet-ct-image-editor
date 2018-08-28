@@ -38,13 +38,19 @@ class HeaderUI(tk.Frame):
 
         # input header information
         self.header_frame = tk.Frame(controls_frame)
+        tk.Label(self.header_frame, text='Input New Headerfile Info', font=tkfont.Font(weight=tkfont.BOLD), justify='center').grid(row=0,columnspan=2)
+        self.init_entries()
+        self.header_frame.grid(row=2,column=0)
 
         # info frame (for displaying parent image header information)
         self.info_frame = tk.Frame(controls_frame)
-        self.info_string = ''
+        self.info_string = self.get_info_string()
+        tk.Label(self.info_frame, text='Original File Info', font=tkfont.Font(weight=tkfont.BOLD), justify='center').pack()
+        tk.Label(self.info_frame, text=self.info_string, justify='left').pack()
 
-        self.init_entries()
-        self.header_frame.grid(row=1,column=0,pady=30)
+        self.info_frame.grid(row=1,column=0,pady=15)
+
+
 
         # make figure
         self.make_figure()
@@ -111,10 +117,10 @@ class HeaderUI(tk.Frame):
             entry = tk.Entry(self.header_frame,textvariable=getattr(self,attr),width=40)
             entry_attr = attr+'_entry'
             setattr(self,entry_attr,entry)
-            getattr(self,entry_attr).grid(row=i,column=1)
+            getattr(self,entry_attr).grid(row=i+1,column=1)
             label_attr = attr+'_label'
             setattr(self,label_attr,tk.Label(self.header_frame,text=get_label(attr)))
-            getattr(self,label_attr).grid(row=i,column=0)
+            getattr(self,label_attr).grid(row=i+1,column=0)
 
         # set the entry variables according to values in the cut params (may have been updated by previous input in this program)
         for attr in self.hdr_attrs:
@@ -127,6 +133,14 @@ class HeaderUI(tk.Frame):
 
         self.out_filename.set(self.cut.out_filename)
 
+
+    def get_info_string(self):
+        info_string = ''
+        for attr in self.hdr_attrs:
+            attr_val = getattr(self.controller.image.params, attr) if attr != 'out_filename' else self.controller.image.filename
+            label = get_label(attr) if attr != 'out_filename' else 'Filename'
+            info_string += "{} :  {}\n".format(label, attr_val)
+        return info_string
 
     def update_cut(self):
         for attr in self.hdr_attrs:
