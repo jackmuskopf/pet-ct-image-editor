@@ -154,7 +154,7 @@ class BaseImage:
                 except IndexError:
                     pass
 
-        ok_miss = ['animal_number']
+        ok_miss = ['animal_number','subject_weight','dose','injection_time']
         failed = [kw for kw in kwrds if params[kw] is None and kw not in ok_miss]
         if any(failed):
             raise ValueError('Failed to parse parameters: {}'.format(', '.join(failed)))

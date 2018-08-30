@@ -15,13 +15,16 @@ class ImageCutter(tk.Frame):
         # controls frame
         controls_frame = tk.Frame(self)
 
+        # number of cuts made
+        ncuts = len(self.controller.image.cuts)
+
         # add next and back buttons
         nbframe = tk.Frame(controls_frame)
         nxt = tk.Button(nbframe,text='Next',command=self.next)
         back = tk.Button(nbframe,text='Back',command=self.back)
         nxt.pack(side=tk.RIGHT,padx=(100,30),pady=(30,30))
         back.pack(side=tk.LEFT,padx=(30,100),pady=(30,30))
-        nbframe.grid(row=4,column=0,columnspan=4,pady=(70,0))
+        nbframe.grid(row=max([ncuts+1,4]),column=0,columnspan=4,pady=(70,0))
        
         # add cut to queued cuts
         cut_controls = tk.Frame(controls_frame)
@@ -35,7 +38,6 @@ class ImageCutter(tk.Frame):
         cut_controls.grid(row=3,column=2)
 
         # rm cut frame
-        ncuts = len(self.controller.image.cuts)
         rm_button_frame = None
         if ncuts:
             rm_button_frame = tk.Frame(controls_frame)
