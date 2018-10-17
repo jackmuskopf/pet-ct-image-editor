@@ -1,6 +1,7 @@
 from src.appclasses.image_gui import *
 
 if __name__ == "__main__":
+	# starts app
     gc.collect()
     clean_temp_dirs()
     data_folder = os.path.join('data','pcds')
